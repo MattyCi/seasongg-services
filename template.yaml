@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: chapter5-api
+
+Globals: # used to declare shared attributes for certain resources. ie. in this case, both Lambda functions share these properties!
+  Function:
+    Runtime: java11
+    MemorySize: 1024
+    Timeout: 120
+    Environment:
+      Variables:
+        TEST_KEY: TEST_VAL
+  Api:
+    OpenApiVersion: '3.0.1'
+
+Resources:
+  SggLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: build/distributions/micronautguide-0.1.zip
+      Handler: io.micronaut.function.aws.proxy.MicronautLambdaHandler
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
