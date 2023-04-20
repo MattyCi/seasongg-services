@@ -41,10 +41,10 @@ dependencies {
     implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
 
-    if (System.getenv("MICRONAUT_ENVIRONMENTS")?.contains("local")) {
-        runtimeOnly("com.h2database:h2")
-    } else {
+    if (System.getenv("MICRONAUT_ENVIRONMENTS")?.contains("dev")) {
         runtimeOnly("mysql:mysql-connector-java")
+    } else {
+        runtimeOnly("com.h2database:h2")
     }
 
 }
