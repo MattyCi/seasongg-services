@@ -1,4 +1,4 @@
-package example.micronaut;
+package com.sgg;
 
 import javax.persistence.*;
 import java.io.Serializable;

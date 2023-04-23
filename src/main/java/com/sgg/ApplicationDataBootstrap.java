@@ -1,4 +1,4 @@
-package example.micronaut;
+package com.sgg;
 
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;

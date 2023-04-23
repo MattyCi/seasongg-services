@@ -1,4 +1,4 @@
-package example.micronaut;
+package com.sgg;
 
 public @interface CustomSecurityRuleAnnotation {
 

@@ -1,4 +1,4 @@
-package example.micronaut;
+package com.sgg;
 
 
 import io.micronaut.data.annotation.Repository;

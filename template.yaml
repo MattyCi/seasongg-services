@@ -9,7 +9,8 @@ Globals: # used to declare shared attributes for certain resources. ie. in this 
     Timeout: 120
     Environment:
       Variables:
-        TEST_KEY: TEST_VAL
+        # TODO: change based on environment
+        MICRONAUT_ENVIRONMENTS: local
   Api:
     OpenApiVersion: '3.0.1'
 
@@ -17,7 +18,7 @@ Resources:
   SggLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build/distributions/micronautguide-0.1.zip
+      CodeUri: build/distributions/seasongg-services-0.1.zip
       Handler: io.micronaut.function.aws.proxy.MicronautLambdaHandler
       Events:
         GetResource:

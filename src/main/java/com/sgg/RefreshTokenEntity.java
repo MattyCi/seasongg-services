@@ -1,5 +1,5 @@
 //tag::clazzwithoutsettersandgetters[]
-package example.micronaut;
+package com.sgg;
 
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.annotation.DateCreated;

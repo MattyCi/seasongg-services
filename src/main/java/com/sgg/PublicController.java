@@ -1,4 +1,4 @@
-package example.micronaut;
+package com.sgg;
 
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;

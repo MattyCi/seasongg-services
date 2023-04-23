@@ -1,6 +1,5 @@
-package example.micronaut;
+package com.sgg;
 
-import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.rules.SecuredAnnotationRule;

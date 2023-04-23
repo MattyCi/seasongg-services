@@ -67,6 +67,7 @@ micronaut {
     }
 }
 
+// TODO: remove this
 task buildZip(type: Zip) {
     from compileJava
     from processResources
