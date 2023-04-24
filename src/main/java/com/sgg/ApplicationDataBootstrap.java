@@ -8,19 +8,19 @@ import jakarta.inject.Singleton;
 @Singleton
 public class ApplicationDataBootstrap implements ApplicationEventListener<ServerStartupEvent> {
 
-    @Inject
+    /*@Inject
     ReguserRepository reguserRepository;
 
     @Inject
     PermissionRepository permissionRepository;
 
     @Inject
-    UserPermissionRepository userPermissionRepository;
+    UserPermissionRepository userPermissionRepository;*/
 
     @Override
     public void onApplicationEvent(ServerStartupEvent event) {
 
-        if (reguserRepository.findByUsernameIgnoreCase("matt").isEmpty()) {
+        /*if (reguserRepository.findByUsernameIgnoreCase("matt").isEmpty()) {
             Reguser reguser = new Reguser("matt", "test");
             reguserRepository.save(reguser);
 
@@ -35,6 +35,6 @@ public class ApplicationDataBootstrap implements ApplicationEventListener<Server
             userPermissionRepository.save(userPermission);
 
         }
-
+        */
     }
 }

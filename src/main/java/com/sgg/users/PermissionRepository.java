@@ -1,10 +1,9 @@
-package com.sgg;
-
+package com.sgg.users;
 
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.repository.CrudRepository;
 
 @Repository
-public interface UserPermissionRepository extends CrudRepository<UserPermission, Integer> {
+interface PermissionRepository extends CrudRepository<Permission, Integer> {
 
 }

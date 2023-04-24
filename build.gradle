@@ -50,7 +50,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("example.micronaut.Application")
+    mainClass.set("com.sgg.Application")
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("11")
