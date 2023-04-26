@@ -3,7 +3,7 @@ package com.sgg.users;
 import lombok.*;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -25,7 +25,7 @@ class User {
     private String password;
 
     @Column(name = "registration_time", updatable = false)
-    private Timestamp registrationTime;
+    private OffsetDateTime registrationTime;
 
     private String salt;
 

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class PermissionDTO {
+class PermissionDto {
 	private int permId;
 
 	// TODO: it may make more sense to have three fields representing the the "*:*:*" permission notation for the DTO

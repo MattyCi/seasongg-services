@@ -13,6 +13,9 @@ repositories {
 dependencies {
 
     annotationProcessor("org.projectlombok:lombok")
+    implementation ("org.mapstruct:mapstruct:1.5.5.Final")
+    implementation("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
     //testAnnotationProcessor 'org.projectlombok:lombok'
     annotationProcessor("io.micronaut.data:micronaut-data-processor")
     annotationProcessor("io.micronaut:micronaut-http-validation")

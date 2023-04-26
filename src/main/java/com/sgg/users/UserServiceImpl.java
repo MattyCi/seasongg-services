@@ -3,32 +3,32 @@ package com.sgg.users;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 
 @Singleton
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
 
+    UserMapper userMapper;
+
     @Inject
-    UserServiceImpl(UserRepository userRepository) {
+    UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
-    public UserDTO registerUser(UserRegistrationRequest userRegistrationRequest) {
+    public UserDto registerUser(UserRegistrationRequest userRegistrationRequest) {
 
         User user = User.builder()
                 .username(userRegistrationRequest.getUsername())
                 .password(userRegistrationRequest.getPassword())
+                .registrationTime(OffsetDateTime.now())
                 .build();
 
         userRepository.save(user);
 
-        // TODO: use mapstruct to return the DTO
-        return UserDTO.builder()
-                .username(user.getUsername())
-                .registrationTime(new Timestamp(System.currentTimeMillis()))
-                .build();
+        return userMapper.userToUserDto(user);
     }
 
 }

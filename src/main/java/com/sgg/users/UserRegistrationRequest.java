@@ -1,6 +1,5 @@
 package com.sgg.users;
 
-import lombok.Data;
 import lombok.Value;
 
 @Value

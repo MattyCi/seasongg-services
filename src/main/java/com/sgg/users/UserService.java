@@ -2,6 +2,6 @@ package com.sgg.users;
 
 public interface UserService {
 
-    public UserDTO registerUser(UserRegistrationRequest userRegistrationRequest);
+    UserDto registerUser(UserRegistrationRequest userRegistrationRequest);
 
 }
