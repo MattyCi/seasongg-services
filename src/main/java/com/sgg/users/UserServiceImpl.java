@@ -23,7 +23,6 @@ public class UserServiceImpl implements UserService {
         User user = User.builder()
                 .username(userRegistrationRequest.getUsername())
                 .password(userRegistrationRequest.getPassword())
-                .registrationTime(OffsetDateTime.now())
                 .build();
 
         userRepository.save(user);
