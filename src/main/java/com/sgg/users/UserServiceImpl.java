@@ -3,8 +3,6 @@ package com.sgg.users;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import java.time.OffsetDateTime;
-
 @Singleton
 public class UserServiceImpl implements UserService {
 
