@@ -29,8 +29,6 @@ class User {
     @Column(name = "registration_time", updatable = false)
     private OffsetDateTime registrationTime;
 
-    private String salt;
-
     @OneToMany(mappedBy = "user")
     private List<UserPermission> userPermissions;
 
