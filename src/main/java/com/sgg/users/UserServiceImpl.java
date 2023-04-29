@@ -29,9 +29,9 @@ public class UserServiceImpl implements UserService {
 
         // TODO: move to custom validator
         userRepository.findByUsernameIgnoreCase(userRegistrationRequest.getUsername()).ifPresent(
-                (it) -> {
+                (user) -> {
                     log.info("user registration failed. username {} already exists",
-                            userRegistrationRequest.getUsername());
+                            user.getUsername());
                     throw new SggException(USERNAME_ALREADY_EXISTS_ERROR_TEXT);
                 }
         );
