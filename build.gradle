@@ -1,5 +1,5 @@
 plugins {
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    // id("com.github.johnrengelman.shadow") version "7.1.2"
     id("io.micronaut.application") version "3.7.3"
 }
 
@@ -30,6 +30,7 @@ dependencies {
     implementation("io.micronaut.reactor:micronaut-reactor")
     implementation("io.micronaut.reactor:micronaut-reactor-http-client")
     implementation("io.micronaut.security:micronaut-security-jwt")
+    implementation('org.springframework.security:spring-security-crypto:5.8.3')
     //implementation("io.micronaut.sql:micronaut-jdbc-hikari")
     implementation("jakarta.annotation:jakarta.annotation-api")
     runtimeOnly("ch.qos.logback:logback-classic")
