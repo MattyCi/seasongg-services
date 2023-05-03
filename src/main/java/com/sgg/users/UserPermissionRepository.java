@@ -4,6 +4,6 @@ import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.repository.CrudRepository;
 
 @Repository
-interface UserPermissionRepository extends CrudRepository<UserPermission, Integer> {
+interface UserPermissionRepository extends CrudRepository<UserPermissionDao, Integer> {
 
 }

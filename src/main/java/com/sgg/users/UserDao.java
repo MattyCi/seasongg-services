@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class User {
+class UserDao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +29,7 @@ class User {
     @Column(name = "registration_time", updatable = false)
     private OffsetDateTime registrationTime;
 
-    @OneToMany(mappedBy = "user")
-    private List<UserPermission> userPermissions;
+    @OneToMany(mappedBy = "userDao")
+    private List<UserPermissionDao> userPermissionEntities;
 
 }

@@ -11,7 +11,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class UserPermission {
+class UserPermissionDao {
 
 	@Id
 	@Column(name = "USER_PERM_ID")
@@ -20,10 +20,10 @@ class UserPermission {
 
 	@ManyToOne
 	@JoinColumn(name = "USER_ID")
-	private User user;
+	private UserDao userDao;
 
 	@ManyToOne
 	@JoinColumn(name = "PERM_ID")
-	private Permission permission;
+	private PermissionDao permissionDao;
 
 }

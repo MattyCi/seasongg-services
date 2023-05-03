@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class Permission {
+class PermissionDao {
 
 	@Id
 	@Column(name = "PERM_ID")
@@ -22,7 +22,7 @@ class Permission {
 	@Column(name = "PERM_VALUE")
 	private String permValue;
 
-	@OneToMany(mappedBy = "permission")
-	private List<UserPermission> userPermissions;
+	@OneToMany(mappedBy = "permissionDao")
+	private List<UserPermissionDao> userPermissionDaos;
 
 }

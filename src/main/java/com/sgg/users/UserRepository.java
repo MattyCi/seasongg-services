@@ -6,8 +6,8 @@ import io.micronaut.data.repository.CrudRepository;
 import java.util.Optional;
 
 @Repository
-interface UserRepository extends CrudRepository<User, Long> {
+interface UserRepository extends CrudRepository<UserDao, Long> {
 
-    Optional<User> findByUsernameIgnoreCase(String username);
+    Optional<UserDao> findByUsernameIgnoreCase(String username);
 
 }

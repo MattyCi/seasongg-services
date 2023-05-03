@@ -1,13 +1,16 @@
 package com.sgg.users;
 
 import com.sgg.common.SggException;
+import com.sgg.users.model.UserDto;
 import com.sgg.users.security.PasswordEncoder;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
+@AllArgsConstructor(onConstructor_ = @Inject)
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
@@ -15,13 +18,6 @@ public class UserServiceImpl implements UserService {
     PasswordEncoder passwordEncoder;
 
     private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
-
-    @Inject
-    UserServiceImpl(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     public UserDto registerUser(UserRegistrationRequest userRegistrationRequest) throws SggException {
 
@@ -36,14 +32,14 @@ public class UserServiceImpl implements UserService {
                 }
         );
 
-        User user = User.builder()
+        UserDao userDao = UserDao.builder()
                 .username(userRegistrationRequest.getUsername())
                 .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))
                 .build();
 
-        userRepository.save(user);
+        userRepository.save(userDao);
 
-        return userMapper.userToUserDto(user);
+        return userMapper.userToUserDto(userDao);
     }
 
 }

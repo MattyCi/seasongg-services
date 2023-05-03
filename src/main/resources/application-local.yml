@@ -5,7 +5,7 @@ micronaut:
         signatures:
           secret:
             generator:
-              secret: "localSignatureGeneratorSecret"
+              secret: "localSignatureGeneratorSecretKey"
         generator:
           refresh-token:
             secret: "localRefreshTokenGeneratorSecret"

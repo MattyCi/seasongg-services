@@ -1,6 +1,6 @@
 package com.sgg.web.controllers;
 
-import com.sgg.users.UserDto;
+import com.sgg.users.model.UserDto;
 import com.sgg.users.UserRegistrationRequest;
 import com.sgg.users.UserService;
 import io.micronaut.http.HttpResponse;
@@ -11,17 +11,14 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.inject.Inject;
+import lombok.AllArgsConstructor;
 import lombok.val;
 
 @Controller("${apiVersion}/users")
+@AllArgsConstructor(onConstructor_ = @Inject)
 public class UserController {
 
     UserService userService;
-
-    @Inject
-    UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @Post("/register")
     @Secured(SecurityRule.IS_ANONYMOUS)

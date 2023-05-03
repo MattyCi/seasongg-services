@@ -1,4 +1,4 @@
-package com.sgg.users;
+package com.sgg.users.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
