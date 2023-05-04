@@ -32,4 +32,7 @@ class UserDao {
     @OneToMany(mappedBy = "userDao")
     private List<UserPermissionDao> userPermissionEntities;
 
+    @OneToMany(mappedBy = "userDao")
+    private List<RefreshTokenDao> refreshTokenDaos;
+
 }
