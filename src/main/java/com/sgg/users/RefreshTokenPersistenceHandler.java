@@ -1,6 +1,7 @@
 package com.sgg.users;
 
 import io.micronaut.security.authentication.Authentication;
+import io.micronaut.security.errors.OauthErrorResponseException;
 import io.micronaut.security.token.event.RefreshTokenGeneratedEvent;
 import io.micronaut.security.token.refresh.RefreshTokenPersistence;
 import jakarta.inject.Inject;
@@ -9,6 +10,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import static io.micronaut.security.errors.IssuingAnAccessTokenErrorCode.INVALID_GRANT;
 
 @Slf4j
 @Singleton
@@ -52,8 +56,22 @@ public class RefreshTokenPersistenceHandler implements RefreshTokenPersistence {
 
     @Override
     public Publisher<Authentication> getAuthentication(String refreshToken) {
-        // TODO: finish implementation
-        return Mono.just(Authentication.build("TODO"));
+        return Mono.fromCallable(
+                () -> getAuthenticationFromDataSource(refreshToken)
+        ).onErrorMap(t -> t).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private Authentication getAuthenticationFromDataSource(String refreshToken) throws OauthErrorResponseException {
+        return refreshTokenRepository.findByRefreshToken(refreshToken)
+                .map(this::verifyTokenIsNotRevoked)
+                .orElseThrow(() -> new OauthErrorResponseException(INVALID_GRANT, "refresh token not found", null));
+    }
+
+    private Authentication verifyTokenIsNotRevoked(RefreshTokenDao token) throws OauthErrorResponseException {
+        if (token.getRevoked())
+            throw new OauthErrorResponseException(INVALID_GRANT, "refresh token revoked", null);
+
+        return Authentication.build(token.getUserDao().getUsername());
     }
 
 }

@@ -46,7 +46,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
         }
 
         // TODO: provide authorities instead of empty list
-        return AuthenticationResponse.success("matt", new ArrayList<>());
+        return AuthenticationResponse.success(authenticationRequest.getIdentity().toString(), new ArrayList<>());
     }
 
     private boolean passwordMatches(String givenPassword, String storedPassword) {

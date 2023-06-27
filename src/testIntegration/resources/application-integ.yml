@@ -13,6 +13,7 @@ micronaut:
           refresh-token:
             secret: "localRefreshTokenGeneratorSecret"
 
+# TODO: replace with MySQL info and use testcontainers
 datasources:
   default:
     url: jdbc:h2:mem:sgg;DB_CLOSE_DELAY=-1
@@ -26,6 +27,7 @@ jpa:
     properties:
       hibernate:
         show_sql: true
+
 
 logger:
   levels:

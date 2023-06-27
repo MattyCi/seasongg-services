@@ -1,6 +1,7 @@
 plugins {
     // id("com.github.johnrengelman.shadow") version "7.1.2"
     id("io.micronaut.application") version "3.7.3"
+    id("groovy")
 }
 
 version = "0.1"
@@ -45,6 +46,13 @@ dependencies {
     implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
 
+    testImplementation("ch.qos.logback:logback-classic")
+    testImplementation 'io.micronaut:micronaut-inject-groovy'
+    testImplementation "io.micronaut.test:micronaut-test-spock"
+    testImplementation("org.spockframework:spock-core") {
+        exclude group: "org.codehaus.groovy", module: "groovy-all"
+    }
+
     if (System.getenv("MICRONAUT_ENVIRONMENTS")?.contains("dev")) {
         runtimeOnly("mysql:mysql-connector-java")
     } else {
@@ -64,7 +72,7 @@ java {
 graalvmNative.toolchainDetection = false
 micronaut {
     runtime("netty")
-    testRuntime("junit5")
+    testRuntime("spock2")
     processing {
         incremental(true)
         annotations("example.micronaut.*")
@@ -79,4 +87,43 @@ task buildZip(type: Zip) {
         from configurations.runtimeClasspath
     }
 }
+
+sourceSets {
+    testIntegration {
+        groovy.srcDir "src/testIntegration/groovy"
+        resources.srcDir "src/testIntegration/resources"
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+configurations {
+    testIntegrationImplementation.extendsFrom testImplementation
+    testIntegrationRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+    // TODO: change this to MySQL (using testcontainers)
+    testIntegrationImplementation("com.h2database:h2")
+}
+
+rootProject.tasks.named("processTestIntegrationResources") {
+    duplicatesStrategy = 'include'
+}
+
+tasks.register('testIntegration', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    getEnvironment().put("MICRONAUT_ENVIRONMENTS", "integ")
+
+    testClassesDirs = sourceSets.testIntegration.output.classesDirs
+    classpath = sourceSets.testIntegration.runtimeClasspath
+    shouldRunAfter test
+
+    testLogging {
+        events "passed"
+    }
+}
+
+check.dependsOn testIntegration
 
