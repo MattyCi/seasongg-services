@@ -5,7 +5,7 @@ plugins {
 }
 
 version = "0.1"
-group = "example.micronaut"
+group = "com.sgg"
 
 repositories {
     mavenCentral()
@@ -79,8 +79,8 @@ micronaut {
     }
 }
 
-// TODO: remove this
-task buildZip(type: Zip) {
+// TODO: remove this?
+tasks.register('buildZip', Zip) {
     from compileJava
     from processResources
     into('lib') {
