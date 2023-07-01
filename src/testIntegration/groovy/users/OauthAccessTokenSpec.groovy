@@ -1,8 +1,9 @@
 package users
 
-import com.sgg.users.RefreshTokenRepository
+
 import com.sgg.users.UserRegistrationRequest
 import com.sgg.users.UserService
+import com.sgg.users.security.RefreshTokenService
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
@@ -25,7 +26,7 @@ class OauthAccessTokenSpec extends Specification {
 
     @Shared
     @Inject
-    RefreshTokenRepository refreshTokenRepository
+    RefreshTokenService refreshTokenService
 
     @Shared
     @Inject
@@ -51,7 +52,7 @@ class OauthAccessTokenSpec extends Specification {
 
         then: 'the refresh token is saved to the database'
         new PollingConditions().eventually {
-            assert refreshTokenRepository.count() == old(refreshTokenRepository.count()) + 1
+            assert refreshTokenService.count() == old(refreshTokenService.count()) + 1
         }
 
         and: 'response contains an access token token'
@@ -70,7 +71,7 @@ class OauthAccessTokenSpec extends Specification {
         refreshResponse.accessToken != rsp.accessToken
 
         cleanup:
-        refreshTokenRepository.deleteAll()
+        refreshTokenService.deleteAll()
     }
 
 }

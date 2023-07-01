@@ -1,5 +1,6 @@
 package com.sgg.users;
 
+import com.sgg.users.security.RefreshTokenService;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.errors.OauthErrorResponseException;
 import io.micronaut.security.token.event.RefreshTokenGeneratedEvent;
@@ -19,7 +20,7 @@ import static io.micronaut.security.errors.IssuingAnAccessTokenErrorCode.INVALID
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class RefreshTokenPersistenceHandler implements RefreshTokenPersistence {
 
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
 
     @Override
@@ -47,7 +48,7 @@ public class RefreshTokenPersistenceHandler implements RefreshTokenPersistence {
     private void persistTokenToUser(String refreshToken, UserDao user) {
         log.info("persisting refresh token for user {}", user.getUserId());
 
-        refreshTokenRepository.save(RefreshTokenDao.builder()
+        refreshTokenService.persistRefreshToken(RefreshTokenDao.builder()
                 .refreshToken(refreshToken)
                 .userDao(user)
                 .revoked(false)
@@ -62,7 +63,7 @@ public class RefreshTokenPersistenceHandler implements RefreshTokenPersistence {
     }
 
     private Authentication getAuthenticationFromDataSource(String refreshToken) throws OauthErrorResponseException {
-        return refreshTokenRepository.findByRefreshToken(refreshToken)
+        return refreshTokenService.findRefreshToken(refreshToken)
                 .map(this::verifyTokenIsNotRevoked)
                 .orElseThrow(() -> new OauthErrorResponseException(INVALID_GRANT, "refresh token not found", null));
     }
