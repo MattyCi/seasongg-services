@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
-public class UserServiceImpl implements UserService {
+public class DefaultUserService implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
