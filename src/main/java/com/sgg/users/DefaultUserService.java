@@ -17,6 +17,8 @@ public class DefaultUserService implements UserService {
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
 
+    private static final String USER_NOT_FOUND_ERROR = "A user could not be found for the given username.";
+
     private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
 
     public UserDto registerUser(UserRegistrationRequest userRegistrationRequest) throws SggException {
@@ -40,6 +42,16 @@ public class DefaultUserService implements UserService {
         userRepository.save(userDao);
 
         return userMapper.userToUserDto(userDao);
+    }
+
+    // TODO: change this to be "deleteAccount" and adjust logic accordingly
+    @Override
+    public void deleteUser(String username) throws SggException {
+        userRepository.findByUsernameIgnoreCase(username)
+                .ifPresentOrElse(
+                        userRepository::delete,
+                        () -> { throw new SggException(USER_NOT_FOUND_ERROR); }
+                );
     }
 
 }

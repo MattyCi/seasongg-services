@@ -74,4 +74,8 @@ class OauthAccessTokenSpec extends Specification {
         refreshTokenService.deleteAll()
     }
 
+    def cleanup() {
+        userService.deleteUser("sgg-user")
+    }
+
 }

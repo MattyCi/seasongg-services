@@ -7,4 +7,6 @@ public interface UserService {
 
     UserDto registerUser(UserRegistrationRequest userRegistrationRequest) throws SggException;
 
+    void deleteUser(String username) throws SggException;
+
 }
