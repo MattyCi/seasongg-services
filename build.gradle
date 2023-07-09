@@ -46,6 +46,8 @@ dependencies {
     implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
 
+    compileOnly("com.google.code.findbugs:jsr305") // https://github.com/micronaut-projects/micronaut-core/issues/5323
+
     testImplementation("ch.qos.logback:logback-classic")
     testImplementation 'io.micronaut:micronaut-inject-groovy'
     testImplementation "io.micronaut.test:micronaut-test-spock"
