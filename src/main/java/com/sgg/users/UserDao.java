@@ -29,10 +29,10 @@ class UserDao {
     @Column(name = "registration_time", updatable = false)
     private OffsetDateTime registrationTime;
 
-    @OneToMany(mappedBy = "userDao")
+    @OneToMany(mappedBy = "userDao", cascade = CascadeType.ALL)
     private List<UserPermissionDao> userPermissionEntities;
 
-    @OneToMany(mappedBy = "userDao")
+    @OneToMany(mappedBy = "userDao", cascade = CascadeType.ALL)
     private List<RefreshTokenDao> refreshTokenDaos;
 
 }
