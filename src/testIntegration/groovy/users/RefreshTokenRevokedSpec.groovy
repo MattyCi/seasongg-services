@@ -10,7 +10,6 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.authentication.UsernamePasswordCredentials
 import io.micronaut.security.token.jwt.endpoints.TokenRefreshRequest
 import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
-import io.micronaut.test.annotation.TransactionMode
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
 import spock.lang.Shared
@@ -19,7 +18,7 @@ import spock.util.concurrent.PollingConditions
 
 import static io.micronaut.http.HttpStatus.BAD_REQUEST
 
-@MicronautTest(transactional = false, transactionMode = TransactionMode.SINGLE_TRANSACTION)
+@MicronautTest(transactional = false)
 class RefreshTokenRevokedSpec extends Specification {
 
     @Inject
