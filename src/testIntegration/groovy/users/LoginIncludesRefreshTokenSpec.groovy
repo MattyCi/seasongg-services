@@ -36,7 +36,7 @@ class LoginIncludesRefreshTokenSpec extends Specification {
     }
 
     void "upon successful authentication, the user gets an access token and a refresh token"() {
-        when: 'Login endpoint is called with valid credentials'
+        when: 'login endpoint is called with valid credentials'
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("sgg-user", "test123")
         HttpRequest request = HttpRequest.POST('/login', creds)
         BearerAccessRefreshToken rsp = client.toBlocking().retrieve(request, BearerAccessRefreshToken)

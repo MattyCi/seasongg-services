@@ -41,7 +41,7 @@ class JwtAuthenticationSpec extends Specification {
         )
     }
 
-    void 'Accessing a secured URL without authenticating returns unauthorized'() {
+    void 'accessing a secured URL without authenticating returns unauthorized'() {
         when:
         client.toBlocking().exchange(HttpRequest.GET('/').accept(TEXT_PLAIN))
 
@@ -51,7 +51,7 @@ class JwtAuthenticationSpec extends Specification {
     }
 
     void "upon successful authentication, a JSON Web token is issued to the user"() {
-        when: 'Login endpoint is called with valid credentials'
+        when: 'login endpoint is called with valid credentials'
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("sgg-user", "test123")
         HttpRequest request = HttpRequest.POST('/login', creds)
         HttpResponse<BearerAccessRefreshToken> rsp = client.toBlocking().exchange(request, BearerAccessRefreshToken)

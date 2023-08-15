@@ -20,7 +20,7 @@ class UnsignedRefreshTokenSpec extends Specification {
     @Client("/")
     HttpClient client
 
-    void 'Accessing a secured URL without authenticating returns unauthorized'() {
+    void 'supplying an unsigned refresh token returns an error'() {
 
         given:
         String unsignedRefreshedToken = "foo"

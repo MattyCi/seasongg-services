@@ -42,7 +42,7 @@ class OauthAccessTokenSpec extends Specification {
         )
     }
 
-    void "Verify JWT access token refresh works"() {
+    void "verify JWT access token refresh works"() {
         given:
         def creds = new UsernamePasswordCredentials("sgg-user", "test123")
 

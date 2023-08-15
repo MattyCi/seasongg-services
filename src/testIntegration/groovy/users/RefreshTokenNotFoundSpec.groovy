@@ -25,7 +25,7 @@ class RefreshTokenNotFoundSpec extends Specification {
     @Inject
     RefreshTokenGenerator refreshTokenGenerator
 
-    void 'Accessing a secured URL without authenticating returns unauthorized'() {
+    void 'trying to request an access token'() {
         given:
         Authentication user = Authentication.build("sherlock")
 
@@ -36,14 +36,14 @@ class RefreshTokenNotFoundSpec extends Specification {
         then:
         refreshTokenOptional.isPresent()
 
-        when:
+        when: "a signed refresh token that was never persisted is supplied"
         String signedRefreshToken = refreshTokenOptional.get()
         Argument<BearerAccessRefreshToken> bodyArgument = Argument.of(BearerAccessRefreshToken)
         Argument<Map> errorArgument = Argument.of(Map)
         HttpRequest req = HttpRequest.POST("/oauth/access_token", new TokenRefreshRequest(signedRefreshToken))
         client.toBlocking().exchange(req, bodyArgument, errorArgument)
 
-        then:
+        then: "an error is returned"
         HttpClientResponseException e = thrown()
         e.status == BAD_REQUEST
 

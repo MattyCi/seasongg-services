@@ -43,7 +43,7 @@ class RefreshTokenRevokedSpec extends Specification {
         )
     }
 
-    void 'accessing a secured URL without authenticating returns unauthorized'() {
+    void 'trying to refresh a revoked refresh token returns error'() {
         given:
         final loginRequest = HttpRequest.POST('/login',
                 new UsernamePasswordCredentials("sgg-user", "test123"))
