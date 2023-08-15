@@ -1,82 +1,72 @@
 package users
 
-import com.sgg.users.RefreshTokenDao
-import com.sgg.users.UserDao
-import com.sgg.users.UserRepository
+import com.sgg.users.UserRegistrationRequest
+import com.sgg.users.UserService
 import com.sgg.users.security.RefreshTokenService
-import io.micronaut.context.ApplicationContext
-import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.runtime.server.EmbeddedServer
 import io.micronaut.security.authentication.Authentication
+import io.micronaut.security.authentication.UsernamePasswordCredentials
 import io.micronaut.security.token.generator.RefreshTokenGenerator
 import io.micronaut.security.token.jwt.endpoints.TokenRefreshRequest
 import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
-import spock.lang.AutoCleanup
+import io.micronaut.test.annotation.TransactionMode
+import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import jakarta.inject.Inject
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import static io.micronaut.http.HttpStatus.BAD_REQUEST
 
+@MicronautTest(transactional = false, transactionMode = TransactionMode.SINGLE_TRANSACTION)
 class RefreshTokenRevokedSpec extends Specification {
 
-    @AutoCleanup
-    @Shared
-    EmbeddedServer embeddedServer = ApplicationContext.run(EmbeddedServer, [:])
+    @Inject
+    @Client("/")
+    HttpClient client
 
     @Shared
-    HttpClient client = embeddedServer.applicationContext.createBean(HttpClient, embeddedServer.URL)
+    @Inject
+    RefreshTokenService refreshTokenService
 
     @Shared
-    RefreshTokenGenerator refreshTokenGenerator = embeddedServer.applicationContext.getBean(RefreshTokenGenerator)
+    @Inject
+    UserService userService
+    
+    def setupSpec() {
+        userService.registerUser(
+                new UserRegistrationRequest(
+                        "sgg-user",
+                        "test123",
+                        "test123"
+                )
+        )
+    }
 
-    @Shared
-    RefreshTokenService refreshTokenService = embeddedServer.applicationContext.getBean(RefreshTokenService)
-
-    @Shared
-    UserRepository userRepository = embeddedServer.applicationContext.getBean(UserRepository)
-
-    void 'Accessing a secured URL without authenticating returns unauthorized'() {
+    void 'accessing a secured URL without authenticating returns unauthorized'() {
         given:
-        Authentication user = Authentication.build("sherlock")
+        final loginRequest = HttpRequest.POST('/login',
+                new UsernamePasswordCredentials("sgg-user", "test123"))
 
-        when:
-        String refreshToken = refreshTokenGenerator.createKey(user)
-        Optional<String> refreshTokenOptional = refreshTokenGenerator.generate(user, refreshToken)
+        when: "a user logs in"
+        final rsp = client.toBlocking().retrieve(loginRequest, BearerAccessRefreshToken)
 
-        then:
-        refreshTokenOptional.isPresent()
+        then: "a refresh token is returned"
+        rsp.refreshToken
 
-        and:
-        final userDao = UserDao.builder()
-            .username("sgg-user")
-            .password("test123")
-            .build()
+        and: "a refresh token is persisted"
+        new PollingConditions().eventually {
+            assert refreshTokenService.count() == old(refreshTokenService.count()) + 1
+        }
 
-        userRepository.save(userDao)
-
-        final refreshTokenDao = RefreshTokenDao.builder()
-            .refreshToken(refreshToken)
-            .userDao(userDao)
-            .revoked(true)
-            .build()
-
-        when:
-        String signedRefreshToken = refreshTokenOptional.get()
-        refreshTokenService.persistRefreshToken(refreshTokenDao)
-
-        then:
-        refreshTokenService.count() == old(refreshTokenService.count()) + 1
-
-        when:
-        Argument<BearerAccessRefreshToken> bodyArgument = Argument.of(BearerAccessRefreshToken)
-        Argument<Map> errorArgument = Argument.of(Map)
-        client.toBlocking().exchange(
-                HttpRequest.POST("/oauth/access_token", new TokenRefreshRequest(signedRefreshToken)),
-                bodyArgument,
-                errorArgument)
+        when: "a user tries to refresh their revoked refresh token"
+        final refreshTokenRequest = HttpRequest.POST('/oauth/access_token',
+                new TokenRefreshRequest(rsp.refreshToken))
+        refreshTokenService.revokeRefreshToken(refreshTokenService.count())
+        client.toBlocking().retrieve(refreshTokenRequest, BearerAccessRefreshToken)
 
         then:
         HttpClientResponseException e = thrown()
@@ -98,7 +88,7 @@ class RefreshTokenRevokedSpec extends Specification {
 
     def cleanup() {
         refreshTokenService.deleteAll()
-        userRepository.deleteAll()
+        userService.deleteUser("sgg-user")
     }
 
 }

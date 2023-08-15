@@ -17,7 +17,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
-@MicronautTest(rollback = false)
+@MicronautTest(transactional = false)
 class OauthAccessTokenSpec extends Specification {
 
     @Inject

@@ -1,5 +1,6 @@
 package com.sgg.users.security;
 
+import com.sgg.common.SggException;
 import com.sgg.users.RefreshTokenDao;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -19,8 +20,8 @@ public class RefreshTokenService {
         return refreshTokenRepository.findByRefreshToken(refreshToken);
     }
 
-    public RefreshTokenDao persistRefreshToken(RefreshTokenDao refreshTokenDao) {
-        return refreshTokenRepository.save(refreshTokenDao);
+    public void persistRefreshToken(RefreshTokenDao refreshTokenDao) {
+        refreshTokenRepository.save(refreshTokenDao);
     }
 
     public long count() {
@@ -30,6 +31,16 @@ public class RefreshTokenService {
     public void deleteAll() {
         log.warn("deleting all refresh tokens!");
         refreshTokenRepository.deleteAll();
+    }
+
+    public void revokeRefreshToken(long id) {
+        refreshTokenRepository.findById(id).ifPresentOrElse(
+                (td) -> {
+                    td.setRevoked(true);
+                    refreshTokenRepository.update(td);
+                },
+                () -> { throw new SggException("Token not found."); }
+        );
     }
 
 }

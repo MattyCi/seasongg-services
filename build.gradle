@@ -1,7 +1,8 @@
 plugins {
     // id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("io.micronaut.application") version "3.7.3"
+    id("io.micronaut.application") version "3.7.10"
     id("groovy")
+    id ("com.avast.gradle.docker-compose") version "0.16.12"
 }
 
 version = "0.1"
@@ -105,8 +106,7 @@ configurations {
 }
 
 dependencies {
-    // TODO: change this to MySQL (using testcontainers)
-    testIntegrationImplementation("com.h2database:h2")
+    testIntegrationImplementation("mysql:mysql-connector-java")
 }
 
 rootProject.tasks.named("processTestIntegrationResources") {
@@ -127,5 +127,10 @@ tasks.register('testIntegration', Test) {
     }
 }
 
-check.dependsOn testIntegration
+dockerCompose {
+    dockerCompose.useComposeFiles = ['docker-compose-integ.yml']
+}
 
+dockerCompose.isRequiredBy(tasks.named('testIntegration'))
+
+check.dependsOn testIntegration
