@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @Singleton
 @Slf4j
@@ -34,7 +35,7 @@ public class DefaultUserService implements UserService {
                 }
         );
 
-        UserDao userDao = UserDao.builder()
+        val userDao = UserDao.builder()
                 .username(userRegistrationRequest.getUsername())
                 .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))
                 .build();
@@ -44,7 +45,7 @@ public class DefaultUserService implements UserService {
         return userMapper.userToUserDto(userDao);
     }
 
-    // TODO: change this to be "deleteAccount" and adjust logic accordingly
+    // TODO: change to "deleteAccount" and adjust logic accordingly (this is needed for test cleanup in the meantime)
     @Override
     public void deleteUser(String username) throws SggException {
         userRepository.findByUsernameIgnoreCase(username)
