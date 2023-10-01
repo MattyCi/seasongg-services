@@ -14,8 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public
-class UserDao {
+public class UserDao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
