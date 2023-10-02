@@ -9,4 +9,8 @@ public interface UserService {
 
     void deleteUser(String username) throws SggException;
 
+    UserDto getUserById(Long id);
+
+    UserDto getUserByUsername(String username);
+
 }

@@ -1,8 +1,9 @@
 package com.sgg.web.controllers;
 
-import com.sgg.users.model.UserDto;
 import com.sgg.users.UserRegistrationRequest;
 import com.sgg.users.UserService;
+import com.sgg.users.ValidUserRegistration;
+import com.sgg.users.model.UserDto;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Body;
@@ -22,7 +23,8 @@ public class UserController {
 
     @Post("/register")
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<UserDto> register(@Body UserRegistrationRequest userRegistrationRequest) {
+    public HttpResponse<UserDto> register(@Body @ValidUserRegistration
+                                              UserRegistrationRequest userRegistrationRequest) {
         val result = userService.registerUser(userRegistrationRequest);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }

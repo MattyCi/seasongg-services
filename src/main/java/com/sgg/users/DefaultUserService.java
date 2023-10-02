@@ -18,22 +18,11 @@ public class DefaultUserService implements UserService {
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
 
-    private static final String USER_NOT_FOUND_ERROR = "A user could not be found for the given username.";
-
-    private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
+    private static final String USER_NOT_FOUND_ERROR = "The given user could not be found.";
 
     public UserDto registerUser(UserRegistrationRequest userRegistrationRequest) throws SggException {
 
         log.info("attempting to register user with username: {}", userRegistrationRequest.getUsername());
-
-        // TODO: move to custom validator
-        userRepository.findByUsernameIgnoreCase(userRegistrationRequest.getUsername()).ifPresent(
-                (user) -> {
-                    log.info("user registration failed. username {} already exists",
-                            user.getUsername());
-                    throw new SggException(USERNAME_ALREADY_EXISTS_ERROR_TEXT);
-                }
-        );
 
         val userDao = UserDao.builder()
                 .username(userRegistrationRequest.getUsername())
@@ -53,6 +42,26 @@ public class DefaultUserService implements UserService {
                         userRepository::delete,
                         () -> { throw new SggException(USER_NOT_FOUND_ERROR); }
                 );
+    }
+
+    public UserDto getUserById(Long id) {
+        val userDao = userRepository.findById(id);
+
+        if (userDao.isPresent()) {
+            return userMapper.userToUserDto(userDao.get());
+        } else {
+            throw new SggException(USER_NOT_FOUND_ERROR);
+        }
+    }
+
+    public UserDto getUserByUsername(String username) {
+        val userDao = userRepository.findByUsernameIgnoreCase(username);
+
+        if (userDao.isPresent()) {
+            return userMapper.userToUserDto(userDao.get());
+        } else {
+            throw new SggException(USER_NOT_FOUND_ERROR);
+        }
     }
 
 }
