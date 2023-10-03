@@ -54,7 +54,7 @@ class DefaultUserServiceSpec extends Specification {
         then:
         final e = thrown(HttpClientResponseException)
         assert e.getStatus() == HttpStatus.BAD_REQUEST
-        def errMessage = e.getResponse().getBody(Resource).get().getEmbedded().get("errors")
+        final errMessage = e.getResponse().getBody(Resource).get().getEmbedded().get("errors")
             .get().get(0) as GenericResource
         assert errMessage.getAdditionalProperties().get("message") == "The username provided is already in use."
 
