@@ -16,7 +16,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 @MicronautTest
-class DefaultUserServiceSpec extends Specification {
+class UserRegistrationSpec extends Specification {
 
     @Inject
     @Client("/")

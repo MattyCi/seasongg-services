@@ -17,22 +17,6 @@ micronaut:
           refresh-token:
             secret: "${JWT_GENERATOR_REFRESH_SECRET}"
 
-datasources:
-  default:
-    url: ${JDBC_URL}
-    username: ${JDBC_USER}
-    password: ${JDBC_PASSWORD}
-    dialect: MYSQL
-    driverClassName: com.mysql.cj.jdbc.Driver
-
-jpa:
-  default:
-    properties:
-      hibernate:
-        hbm2ddl:
-          auto: update
-        show_sql: false
-
 jackson:
   serialization:
     writeDatesAsTimestamps: false
