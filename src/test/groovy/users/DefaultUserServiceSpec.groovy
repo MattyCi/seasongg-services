@@ -10,7 +10,7 @@ import spock.lang.Specification
 class DefaultUserServiceSpec extends Specification {
 
     @Inject
-    Validator validator;
+    Validator validator
 
     def 'should throw constraint violation for blank usernames'(String username) {
         given:
@@ -27,6 +27,23 @@ class DefaultUserServiceSpec extends Specification {
 
         where:
         username << [null, "", "   "]
+    }
+
+    def 'should throw constraint violation for blank usernames'(String username) {
+        given:
+        def userRegistrationRequest = new UserRegistrationRequest(
+                username, "test123", "test123"
+        )
+
+        when:
+        final violations = validator.validate(userRegistrationRequest)
+
+        then:
+        assert !violations.isEmpty()
+        violations.first().getMessage() == "Your username can only contain alphanumeric characters."
+
+        where:
+        username << ["username123!", "inval|d", "😊user123", "user_test_123", "user\$name"]
     }
 
 }
