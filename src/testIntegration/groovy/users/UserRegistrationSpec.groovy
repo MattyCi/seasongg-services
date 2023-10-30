@@ -43,6 +43,20 @@ class UserRegistrationSpec extends Specification {
         assert user.getUsername() == req.getUsername()
     }
 
+    def 'ensure validation occurs for user registration request'() {
+        given:
+        final req = new UserRegistrationRequest("", "test123", "test123")
+
+        when:
+        client.toBlocking()
+                .exchange(HttpRequest.POST("/" + apiVersion + "/users/register", req))
+
+        then:
+        final e = thrown(HttpClientResponseException)
+        assert e.getStatus() == HttpStatus.BAD_REQUEST
+        assert 1 == 2 // TODO: failing to finish validating error text
+    }
+
     def 'should throw constraint violation if username already exists'() {
         given: 'a valid registration request'
         final req = new UserRegistrationRequest("sgg-user", "test123", "test123")

@@ -12,7 +12,7 @@ class DefaultUserServiceSpec extends Specification {
     @Inject
     Validator validator
 
-    def 'should throw constraint violation for blank usernames'(String username) {
+    def 'should contain no validation errors for valid usernames'(String username) {
         given:
         def userRegistrationRequest = new UserRegistrationRequest(
                 username, "test123", "test123"
@@ -22,14 +22,13 @@ class DefaultUserServiceSpec extends Specification {
         final violations = validator.validate(userRegistrationRequest)
 
         then:
-        assert !violations.isEmpty()
-        violations.first().getMessage() == "The provided username was blank."
+        assert violations.isEmpty()
 
         where:
-        username << [null, "", "   "]
+        username << ["validuser", "test-user", "lionsfan123", "wingspanguy"]
     }
 
-    def 'should throw constraint violation for blank usernames'(String username) {
+    def 'should return constraint violations for blank usernames'(String username) {
         given:
         def userRegistrationRequest = new UserRegistrationRequest(
                 username, "test123", "test123"
@@ -40,10 +39,27 @@ class DefaultUserServiceSpec extends Specification {
 
         then:
         assert !violations.isEmpty()
-        violations.first().getMessage() == "Your username can only contain alphanumeric characters."
+        violations.message.contains("The provided username was blank.")
 
         where:
-        username << ["username123!", "inval|d", "😊user123", "user_test_123", "user\$name"]
+        username << [null, "", "   ", "\t", "   "]
+    }
+
+    def 'should return constraint violations for non alphanumeric usernames'(String username) {
+        given:
+        def userRegistrationRequest = new UserRegistrationRequest(
+                username, "test123", "test123"
+        )
+
+        when:
+        final violations = validator.validate(userRegistrationRequest)
+
+        then:
+        assert !violations.isEmpty()
+        violations.first().getMessage() == "Your username may only contain alphanumeric characters or hyphens."
+
+        where:
+        username << ["username123!", "inval|d", "😊user123", "user_test_123", "user\$name", "not valid"]
     }
 
 }

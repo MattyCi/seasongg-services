@@ -11,7 +11,7 @@ import javax.validation.constraints.Pattern;
 public class UserRegistrationRequest {
 
     @NotBlank(message = "{registration.username.NotBlank}")
-    @Pattern(regexp = "[^A-Za-z0-9'-]", message = "{registration.username.Pattern}")
+    @Pattern(regexp = "^[a-zA-Z0-9'-]*$", message = "{registration.username.Pattern}")
     String username;
     String password;
     String passwordVerify;

@@ -21,6 +21,7 @@ public class UserDao {
     @Column(name = "user_id")
     private Long userId;
 
+    // TODO: add constraints here - ie. the table should not allow null usernames
     private String username;
 
     private String password;

@@ -15,6 +15,8 @@ import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
+import javax.validation.Valid;
+
 @Controller("${apiVersion}/users")
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class UserController {
@@ -23,7 +25,7 @@ public class UserController {
 
     @Post("/register")
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<UserDto> register(@Body @ValidUserRegistration
+    public HttpResponse<UserDto> register(@Body @Valid @ValidUserRegistration
                                               UserRegistrationRequest userRegistrationRequest) {
         val result = userService.registerUser(userRegistrationRequest);
         return HttpResponse.status(HttpStatus.OK).body(result);

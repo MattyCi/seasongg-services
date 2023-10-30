@@ -19,6 +19,7 @@ class UserRegistrationValidator implements ConstraintValidator<ValidUserRegistra
 
     private UserRepository userRepository;
 
+    // TODO: use resource bundle instead
     private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
 
     @Override
