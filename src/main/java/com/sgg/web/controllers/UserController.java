@@ -25,8 +25,7 @@ public class UserController {
 
     @Post("/register")
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<UserDto> register(@Body @Valid @ValidUserRegistration
-                                              UserRegistrationRequest userRegistrationRequest) {
+    public HttpResponse<UserDto> register(@Body @Valid UserRegistrationRequest userRegistrationRequest) {
         val result = userService.registerUser(userRegistrationRequest);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }

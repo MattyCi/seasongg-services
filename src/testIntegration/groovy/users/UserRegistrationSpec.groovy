@@ -54,7 +54,9 @@ class UserRegistrationSpec extends Specification {
         then:
         final e = thrown(HttpClientResponseException)
         assert e.getStatus() == HttpStatus.BAD_REQUEST
-        assert 1 == 2 // TODO: failing to finish validating error text
+        final errMessage = e.getResponse().getBody(Resource).get().getEmbedded().get("errors")
+                .get().get(0) as GenericResource
+        assert errMessage.getAdditionalProperties().get("message") == "The provided username was blank."
     }
 
     def 'should throw constraint violation if username already exists'() {

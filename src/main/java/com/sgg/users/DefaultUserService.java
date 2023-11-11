@@ -20,7 +20,8 @@ public class DefaultUserService implements UserService {
 
     private static final String USER_NOT_FOUND_ERROR = "The given user could not be found.";
 
-    public UserDto registerUser(UserRegistrationRequest userRegistrationRequest) throws SggException {
+    public UserDto registerUser(@ValidUserRegistration UserRegistrationRequest userRegistrationRequest)
+            throws SggException {
 
         log.info("attempting to register user with username: {}", userRegistrationRequest.getUsername());
 
