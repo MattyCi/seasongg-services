@@ -4,7 +4,7 @@ import io.micronaut.context.annotation.Primary;
 import io.micronaut.http.server.exceptions.response.ErrorResponseProcessor;
 import io.micronaut.validation.exceptions.ConstraintExceptionHandler;
 
-import javax.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolation;
 
 @Primary
 public class SggConstraintExceptionHandler extends ConstraintExceptionHandler {

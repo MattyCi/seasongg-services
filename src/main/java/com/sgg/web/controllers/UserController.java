@@ -2,7 +2,6 @@ package com.sgg.web.controllers;
 
 import com.sgg.users.UserRegistrationRequest;
 import com.sgg.users.UserService;
-import com.sgg.users.ValidUserRegistration;
 import com.sgg.users.model.UserDto;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
@@ -12,10 +11,9 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.val;
-
-import javax.validation.Valid;
 
 @Controller("${apiVersion}/users")
 @AllArgsConstructor(onConstructor_ = @Inject)

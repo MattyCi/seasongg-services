@@ -1,4 +1,4 @@
-package com.sgg.common;
+package com.sgg.common.exception;
 
 public class SggException extends RuntimeException {
 

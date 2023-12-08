@@ -8,9 +8,9 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.security.authentication.UsernamePasswordCredentials
-import io.micronaut.security.token.jwt.endpoints.TokenRefreshRequest
-import io.micronaut.security.token.jwt.render.AccessRefreshToken
-import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
+import io.micronaut.security.endpoints.TokenRefreshRequest
+import io.micronaut.security.token.render.AccessRefreshToken
+import io.micronaut.security.token.render.BearerAccessRefreshToken
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
 import spock.lang.Shared
@@ -35,7 +35,7 @@ class OauthAccessTokenSpec extends Specification {
     def setupSpec() {
         userService.registerUser(
                 new UserRegistrationRequest(
-                        "sgg-user",
+                        "oauth-user",
                         "test123",
                         "test123"
                 )
@@ -44,7 +44,7 @@ class OauthAccessTokenSpec extends Specification {
 
     void "verify JWT access token refresh works"() {
         given:
-        def creds = new UsernamePasswordCredentials("sgg-user", "test123")
+        def creds = new UsernamePasswordCredentials("oauth-user", "test123")
 
         when: 'login endpoint is called with valid credentials'
         HttpRequest request = HttpRequest.POST('/login', creds)
@@ -64,7 +64,7 @@ class OauthAccessTokenSpec extends Specification {
         when:
         sleep(1_000) // sleep for one second to give time for the issued at `iat` Claim to change
         AccessRefreshToken refreshResponse = client.toBlocking().retrieve(HttpRequest.POST('/oauth/access_token',
-                new TokenRefreshRequest(rsp.refreshToken)), AccessRefreshToken)
+                new TokenRefreshRequest(TokenRefreshRequest.GRANT_TYPE_REFRESH_TOKEN, rsp.refreshToken)), AccessRefreshToken)
 
         then:
         refreshResponse.accessToken
@@ -72,10 +72,7 @@ class OauthAccessTokenSpec extends Specification {
 
         cleanup:
         refreshTokenService.deleteAll()
-    }
-
-    def cleanup() {
-        userService.deleteUser("sgg-user")
+        userService.deleteUser("oauth-user")
     }
 
 }

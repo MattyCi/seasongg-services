@@ -1,5 +1,7 @@
 package com.sgg;
 
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.rules.SecuredAnnotationRule;
@@ -15,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 
 @Singleton
-public class CustomSecurityRule implements SecurityRule {
+public class CustomSecurityRule implements SecurityRule<HttpRequest<?>> {
 
     public static final Integer ORDER = SecuredAnnotationRule.ORDER - 100;
 
@@ -25,10 +27,10 @@ public class CustomSecurityRule implements SecurityRule {
     }
 
     @Override
-    public Publisher<SecurityRuleResult> check(HttpRequest<?> request, RouteMatch<?> routeMatch,
-                                               Authentication authentication) {
+    public Publisher<SecurityRuleResult> check(HttpRequest<?> request, @Nullable Authentication authentication) {
 
         System.out.println("in check()");
+        RouteMatch<?> routeMatch = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);
 
         if (routeMatch instanceof MethodBasedRouteMatch) {
             val methodBasedRouteMatch = (MethodBasedRouteMatch<?, ?>) routeMatch;

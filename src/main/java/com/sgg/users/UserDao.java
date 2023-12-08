@@ -3,7 +3,7 @@ package com.sgg.users;
 import io.micronaut.data.annotation.DateCreated;
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 

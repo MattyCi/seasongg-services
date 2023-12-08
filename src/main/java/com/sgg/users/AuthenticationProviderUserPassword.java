@@ -19,7 +19,7 @@ import java.util.ArrayList;
 @Slf4j
 @Singleton
 @AllArgsConstructor(onConstructor_ = @Inject)
-public class AuthenticationProviderUserPassword implements AuthenticationProvider {
+public class AuthenticationProviderUserPassword implements AuthenticationProvider<HttpRequest<?>> {
 
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
