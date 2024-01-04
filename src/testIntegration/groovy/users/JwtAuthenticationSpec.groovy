@@ -10,7 +10,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.authentication.UsernamePasswordCredentials
-import io.micronaut.security.token.jwt.render.BearerAccessRefreshToken
+import io.micronaut.security.token.render.BearerAccessRefreshToken
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
 import spock.lang.Shared
@@ -34,7 +34,7 @@ class JwtAuthenticationSpec extends Specification {
     def setupSpec() {
         userService.registerUser(
                 new UserRegistrationRequest(
-                        "sgg-user",
+                        "jwt-user",
                         "test123",
                         "test123"
                 )
@@ -52,7 +52,7 @@ class JwtAuthenticationSpec extends Specification {
 
     void "upon successful authentication, a JSON Web token is issued to the user"() {
         when: 'login endpoint is called with valid credentials'
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("sgg-user", "test123")
+        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("jwt-user", "test123")
         HttpRequest request = HttpRequest.POST('/login', creds)
         HttpResponse<BearerAccessRefreshToken> rsp = client.toBlocking().exchange(request, BearerAccessRefreshToken)
 
@@ -63,7 +63,7 @@ class JwtAuthenticationSpec extends Specification {
         BearerAccessRefreshToken bearerAccessRefreshToken = rsp.body()
 
         then:
-        bearerAccessRefreshToken.username == 'sgg-user'
+        bearerAccessRefreshToken.username == 'jwt-user'
         bearerAccessRefreshToken.accessToken
 
         and: 'the access token is a signed JWT'
@@ -78,10 +78,10 @@ class JwtAuthenticationSpec extends Specification {
 
         then:
         response.status == OK
-        response.body() == 'sgg-user'
+        response.body() == 'jwt-user'
 
         cleanup:
-        userService.deleteUser("sgg-user")
+        userService.deleteUser("jwt-user")
     }
 
 }

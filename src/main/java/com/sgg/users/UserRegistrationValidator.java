@@ -11,6 +11,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+/**
+ * This class cannot be used until
+ * <a href="https://github.com/micronaut-projects/micronaut-validation/issues/258">
+ *     https://github.com/micronaut-projects/micronaut-validation/issues/258</a> is resolved
+ */
 @Slf4j
 @Singleton
 @Introspected

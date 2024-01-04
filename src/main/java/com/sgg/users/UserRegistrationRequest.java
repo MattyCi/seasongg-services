@@ -3,8 +3,8 @@ package com.sgg.users;
 import io.micronaut.core.annotation.Introspected;
 import lombok.Value;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 @Value
 @Introspected

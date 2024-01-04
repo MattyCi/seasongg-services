@@ -1,6 +1,7 @@
 package com.sgg.users;
 
-import com.sgg.common.SggException;
+import com.sgg.users.exception.UserNotFoundException;
+import com.sgg.users.exception.UserRegistrationException;
 import com.sgg.users.model.UserDto;
 import com.sgg.users.security.PasswordEncoder;
 import jakarta.inject.Inject;
@@ -19,29 +20,43 @@ public class DefaultUserService implements UserService {
     PasswordEncoder passwordEncoder;
 
     private static final String USER_NOT_FOUND_ERROR = "The given user could not be found.";
+    private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
 
-    public UserDto registerUser(@ValidUserRegistration UserRegistrationRequest userRegistrationRequest)
-            throws SggException {
-
+    public UserDto registerUser(UserRegistrationRequest userRegistrationRequest)
+            throws UserNotFoundException, UserRegistrationException {
         log.info("attempting to register user with username: {}", userRegistrationRequest.getUsername());
 
+        checkForExistingUser(userRegistrationRequest);
+
         val userDao = UserDao.builder()
-                .username(userRegistrationRequest.getUsername())
-                .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))
-                .build();
+            .username(userRegistrationRequest.getUsername())
+            .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))
+            .build();
 
         userRepository.save(userDao);
 
         return userMapper.userToUserDto(userDao);
     }
 
+    /**
+     * Move back to UserRegistrationValidator when github.com/micronaut-projects/micronaut-validation/issues/258
+     * is resolved
+     */
+    private void checkForExistingUser(UserRegistrationRequest userRegistrationRequest) {
+        if (userRepository.findByUsernameIgnoreCase(userRegistrationRequest.getUsername()).isPresent()) {
+            log.info("user registration failed. username {} already exists",
+                    userRegistrationRequest.getUsername());
+            throw new UserRegistrationException(USERNAME_ALREADY_EXISTS_ERROR_TEXT);
+        }
+    }
+
     // TODO: change to "deleteAccount" and adjust logic accordingly (this is needed for test cleanup in the meantime)
     @Override
-    public void deleteUser(String username) throws SggException {
+    public void deleteUser(String username) throws UserNotFoundException {
         userRepository.findByUsernameIgnoreCase(username)
                 .ifPresentOrElse(
                         userRepository::delete,
-                        () -> { throw new SggException(USER_NOT_FOUND_ERROR); }
+                        () -> { throw new UserNotFoundException(USER_NOT_FOUND_ERROR); }
                 );
     }
 
@@ -51,7 +66,7 @@ public class DefaultUserService implements UserService {
         if (userDao.isPresent()) {
             return userMapper.userToUserDto(userDao.get());
         } else {
-            throw new SggException(USER_NOT_FOUND_ERROR);
+            throw new UserNotFoundException(USER_NOT_FOUND_ERROR);
         }
     }
 
@@ -61,7 +76,7 @@ public class DefaultUserService implements UserService {
         if (userDao.isPresent()) {
             return userMapper.userToUserDto(userDao.get());
         } else {
-            throw new SggException(USER_NOT_FOUND_ERROR);
+            throw new UserNotFoundException(USER_NOT_FOUND_ERROR);
         }
     }
 

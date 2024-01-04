@@ -1,6 +1,5 @@
 package com.sgg.users.security;
 
-import com.sgg.common.SggException;
 import com.sgg.users.RefreshTokenDao;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -33,13 +32,12 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteAll();
     }
 
-    public void revokeRefreshToken(long id) {
-        refreshTokenRepository.findById(id).ifPresentOrElse(
-                (td) -> {
-                    td.setRevoked(true);
-                    refreshTokenRepository.update(td);
-                },
-                () -> { throw new SggException("Token not found."); }
+    public void revokeAll() {
+        refreshTokenRepository.findAll().forEach(
+                (it) -> {
+                    it.setRevoked(true);
+                    refreshTokenRepository.update(it);
+                }
         );
     }
 
