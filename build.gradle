@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
 
+    // start specifying versions
     annotationProcessor("org.projectlombok:lombok")
     implementation ("org.mapstruct:mapstruct:1.5.5.Final")
     implementation("org.projectlombok:lombok-mapstruct-binding:0.2.0")
