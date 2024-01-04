@@ -56,6 +56,7 @@ public class CustomSecurityRule implements SecurityRule<HttpRequest<?>> {
                         System.out.println("resourceId: " + resourceId);
 
                         System.out.println("\nPRINTING AUTH DETAILS:");
+                        // this may throw a NPE if the user isn't logged in
                         System.out.println(authentication.getName());
                         System.out.println(authentication.getRoles());
 
