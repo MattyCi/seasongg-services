@@ -1,7 +1,7 @@
 package com.sgg.users;
 
-import com.sgg.users.exception.UserNotFoundException;
-import com.sgg.users.exception.UserRegistrationException;
+import com.sgg.users.exception.NotFoundException;
+import com.sgg.users.exception.ClientException;
 import com.sgg.users.model.UserDto;
 import com.sgg.users.security.PasswordEncoder;
 import jakarta.inject.Inject;
@@ -23,7 +23,7 @@ public class DefaultUserService implements UserService {
     private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
 
     public UserDto registerUser(UserRegistrationRequest userRegistrationRequest)
-            throws UserNotFoundException, UserRegistrationException {
+            throws NotFoundException, ClientException {
         log.info("attempting to register user with username: {}", userRegistrationRequest.getUsername());
 
         checkForExistingUser(userRegistrationRequest);
@@ -46,17 +46,17 @@ public class DefaultUserService implements UserService {
         if (userRepository.findByUsernameIgnoreCase(userRegistrationRequest.getUsername()).isPresent()) {
             log.info("user registration failed. username {} already exists",
                     userRegistrationRequest.getUsername());
-            throw new UserRegistrationException(USERNAME_ALREADY_EXISTS_ERROR_TEXT);
+            throw new ClientException(USERNAME_ALREADY_EXISTS_ERROR_TEXT);
         }
     }
 
     // TODO: change to "deleteAccount" and adjust logic accordingly (this is needed for test cleanup in the meantime)
     @Override
-    public void deleteUser(String username) throws UserNotFoundException {
+    public void deleteUser(String username) throws NotFoundException {
         userRepository.findByUsernameIgnoreCase(username)
                 .ifPresentOrElse(
                         userRepository::delete,
-                        () -> { throw new UserNotFoundException(USER_NOT_FOUND_ERROR); }
+                        () -> { throw new NotFoundException(USER_NOT_FOUND_ERROR); }
                 );
     }
 
@@ -66,7 +66,7 @@ public class DefaultUserService implements UserService {
         if (userDao.isPresent()) {
             return userMapper.userToUserDto(userDao.get());
         } else {
-            throw new UserNotFoundException(USER_NOT_FOUND_ERROR);
+            throw new NotFoundException(USER_NOT_FOUND_ERROR);
         }
     }
 
@@ -76,7 +76,7 @@ public class DefaultUserService implements UserService {
         if (userDao.isPresent()) {
             return userMapper.userToUserDto(userDao.get());
         } else {
-            throw new UserNotFoundException(USER_NOT_FOUND_ERROR);
+            throw new NotFoundException(USER_NOT_FOUND_ERROR);
         }
     }
 

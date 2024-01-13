@@ -10,12 +10,12 @@ import jakarta.inject.Singleton;
 
 @Produces
 @Singleton
-@Requires(classes = {UserNotFoundException.class, ExceptionHandler.class})
-public class UserNotFoundExceptionHandler
-        implements ExceptionHandler<UserNotFoundException, HttpResponse<SggError>> {
+@Requires(classes = {NotFoundException.class, ExceptionHandler.class})
+public class NotFoundExceptionHandler
+        implements ExceptionHandler<NotFoundException, HttpResponse<SggError>> {
 
     @Override
-    public HttpResponse<SggError> handle(HttpRequest request, UserNotFoundException exception) {
+    public HttpResponse<SggError> handle(HttpRequest request, NotFoundException exception) {
         return HttpResponse.notFound(new SggError(exception));
     }
 }
