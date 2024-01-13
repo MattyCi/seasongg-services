@@ -1,6 +1,7 @@
 package com.sgg.users.security;
 
-import com.sgg.users.RefreshTokenDao;
+import com.sgg.common.SggException;
+import com.sgg.users.auth.RefreshTokenDao;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;

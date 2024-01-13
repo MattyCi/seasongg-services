@@ -1,5 +1,6 @@
-package com.sgg.users;
+package com.sgg.users.auth;
 
+import com.sgg.users.UserDao;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -11,6 +12,7 @@ import jakarta.persistence.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+public
 class UserPermissionDao {
 
 	@Id

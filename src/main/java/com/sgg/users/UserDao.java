@@ -1,5 +1,7 @@
 package com.sgg.users;
 
+import com.sgg.users.auth.RefreshTokenDao;
+import com.sgg.users.auth.UserPermissionDao;
 import io.micronaut.data.annotation.DateCreated;
 import lombok.*;
 

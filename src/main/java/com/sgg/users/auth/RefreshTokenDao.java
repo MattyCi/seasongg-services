@@ -1,5 +1,6 @@
-package com.sgg.users;
+package com.sgg.users.auth;
 
+import com.sgg.users.UserDao;
 import io.micronaut.data.annotation.DateCreated;
 import lombok.*;
 
