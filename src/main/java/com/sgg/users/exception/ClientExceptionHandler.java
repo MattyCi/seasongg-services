@@ -10,12 +10,12 @@ import jakarta.inject.Singleton;
 
 @Produces
 @Singleton
-@Requires(classes = {UserRegistrationException.class, ExceptionHandler.class})
-public class UserRegistrationExceptionHandler // TODO: do we really need a specific class for this? Could we just use ClientErrorException or something like that?
-        implements ExceptionHandler<UserRegistrationException, HttpResponse<SggError>> {
+@Requires(classes = {ClientException.class, ExceptionHandler.class})
+public class ClientExceptionHandler
+        implements ExceptionHandler<ClientException, HttpResponse<SggError>> {
 
     @Override
-    public HttpResponse<SggError> handle(HttpRequest request, UserRegistrationException exception) {
+    public HttpResponse<SggError> handle(HttpRequest request, ClientException exception) {
         return HttpResponse.badRequest(new SggError(exception));
     }
 }
