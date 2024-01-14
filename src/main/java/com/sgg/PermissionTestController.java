@@ -12,7 +12,7 @@ import java.security.Principal;
 
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Controller("test")
-public class HomeController {
+public class PermissionTestController {
 
     @Produces(MediaType.TEXT_PLAIN)
     @Get // <3>
