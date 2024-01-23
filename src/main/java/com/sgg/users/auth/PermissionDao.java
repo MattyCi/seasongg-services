@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "permissions")
+@Table(name = "permissions") // TODO: how can we ensure these are unique entries?
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,8 +19,16 @@ class PermissionDao {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int permId;
 
-	@Column(name = "PERM_VALUE")
-	private String permValue;
+	@Column(name = "RESOURCE_TYPE")
+	@Enumerated(EnumType.STRING)
+	private ResourceType resourceType;
+
+	@Column(name = "PERMISSION_TYPE")
+	@Enumerated(EnumType.STRING)
+	private PermissionType permissionType;
+
+	@Column(name = "RESOURCE_ID")
+	private Long resourceId;
 
 	@OneToMany(mappedBy = "permissionDao")
 	private List<UserPermissionDao> userPermissionDaos;

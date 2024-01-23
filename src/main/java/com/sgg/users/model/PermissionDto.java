@@ -1,5 +1,7 @@
 package com.sgg.users.model;
 
+import com.sgg.users.auth.PermissionType;
+import com.sgg.users.auth.ResourceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,9 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class PermissionDto {
+public class PermissionDto {
 	private int permId;
-
-	// TODO: it may make more sense to have three fields representing the the "*:*:*" permission notation for the DTO
-	private String permValue;
+	private ResourceType resourceType;
+	private PermissionType permissionType;
+	private Long resourceId;
 }

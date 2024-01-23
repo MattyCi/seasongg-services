@@ -1,5 +1,8 @@
 package com.sgg.users;
 
+import com.sgg.users.auth.PermissionType;
+import com.sgg.users.auth.ResourceType;
+import com.sgg.users.model.PermissionDto;
 import com.sgg.users.security.PasswordEncoder;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpRequest;
@@ -15,6 +18,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Singleton
@@ -45,12 +51,19 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
             return new AuthenticationFailed(ERR_USERNAME_OR_PASSWORD_FAILED);
         }
 
+        Map<String, Object> claims = Map.of("claims", Map.of(formatPermission(new PermissionDto(0, ResourceType.SEASON, PermissionType.WRITE, 123L)), PermissionType.WRITE));
+
         // TODO: provide authorities instead of empty list
-        return AuthenticationResponse.success(authenticationRequest.getIdentity().toString(), new ArrayList<>());
+        return AuthenticationResponse.success(authenticationRequest.getIdentity().toString(), claims);
     }
 
     private boolean passwordMatches(String givenPassword, String storedPassword) {
         return passwordEncoder.matches(givenPassword, storedPassword);
     }
 
+    private String formatPermission(PermissionDto permissionDto) {
+        return String.format("%s:%s",
+                permissionDto.getResourceType(),
+                permissionDto.getResourceId());
+    }
 }
