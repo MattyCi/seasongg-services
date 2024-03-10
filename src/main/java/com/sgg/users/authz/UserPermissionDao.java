@@ -1,16 +1,18 @@
-package com.sgg.users;
+package com.sgg.users.authz;
 
+import com.sgg.users.UserDao;
 import lombok.*;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "user_permissions")
+@Table(name = "user_permissions", uniqueConstraints = @UniqueConstraint(columnNames = {"USER_ID", "PERM_ID"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+public
 class UserPermissionDao {
 
 	@Id
@@ -25,5 +27,4 @@ class UserPermissionDao {
 	@ManyToOne
 	@JoinColumn(name = "PERM_ID")
 	private PermissionDao permissionDao;
-
 }

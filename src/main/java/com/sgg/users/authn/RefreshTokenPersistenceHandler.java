@@ -1,5 +1,7 @@
-package com.sgg.users;
+package com.sgg.users.authn;
 
+import com.sgg.users.UserDao;
+import com.sgg.users.UserRepository;
 import com.sgg.users.security.RefreshTokenService;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.errors.OauthErrorResponseException;

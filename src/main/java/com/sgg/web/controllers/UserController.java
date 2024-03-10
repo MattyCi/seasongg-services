@@ -27,5 +27,4 @@ public class UserController {
         val result = userService.registerUser(userRegistrationRequest);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
-
 }
