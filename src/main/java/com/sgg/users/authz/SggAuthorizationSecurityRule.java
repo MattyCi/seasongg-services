@@ -1,6 +1,8 @@
 package com.sgg.users.authz;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.rules.SecuredAnnotationRule;
@@ -19,7 +21,7 @@ import java.util.Optional;
 
 @Singleton
 @Slf4j
-public class SggAuthorizationSecurityRule implements SecurityRule {
+public class SggAuthorizationSecurityRule implements SecurityRule<HttpRequest<?>> {
 
     public static final Integer ORDER = SecuredAnnotationRule.ORDER - 100;
 
@@ -29,8 +31,8 @@ public class SggAuthorizationSecurityRule implements SecurityRule {
     }
 
     @Override
-    public Publisher<SecurityRuleResult> check(HttpRequest<?> request, RouteMatch<?> routeMatch,
-                                               Authentication authentication) {
+    public Publisher<SecurityRuleResult> check(HttpRequest<?> request, @Nullable Authentication authentication) {
+        val routeMatch = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);
         if (!isAuthorizationRequired(routeMatch))
             return Mono.just(SecurityRuleResult.UNKNOWN);
 

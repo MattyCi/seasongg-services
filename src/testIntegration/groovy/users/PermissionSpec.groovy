@@ -10,11 +10,12 @@ import com.sgg.users.authz.UserPermissionDao
 import com.sgg.users.authz.UserPermissionRepository
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
-import org.hibernate.exception.ConstraintViolationException
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.persistence.PersistenceException
+import jakarta.persistence.PersistenceException
+
+import java.sql.SQLIntegrityConstraintViolationException
 import java.time.OffsetDateTime
 
 @MicronautTest
@@ -68,7 +69,7 @@ class PermissionSpec extends Specification {
 
         then:
         def e = thrown(PersistenceException)
-        e.cause instanceof ConstraintViolationException
+        e.cause instanceof SQLIntegrityConstraintViolationException
     }
 
     def 'throw exceptions when required columns are null'() {
@@ -77,7 +78,7 @@ class PermissionSpec extends Specification {
 
         then:
         def e = thrown(PersistenceException)
-        e.cause instanceof ConstraintViolationException
+        e.cause instanceof SQLIntegrityConstraintViolationException
 
         where:
         permissionDao << [
@@ -114,6 +115,6 @@ class PermissionSpec extends Specification {
 
         then:
         def e = thrown(PersistenceException)
-        e.cause instanceof ConstraintViolationException
+        e.cause instanceof SQLIntegrityConstraintViolationException
     }
 }

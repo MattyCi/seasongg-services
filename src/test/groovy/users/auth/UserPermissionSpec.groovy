@@ -3,11 +3,13 @@ package users.auth
 import com.sgg.users.authz.SggAuthorizationSecurityRule
 import com.sgg.users.authz.SggSecurityRule
 import io.micronaut.core.annotation.AnnotationValue
+import io.micronaut.http.HttpAttributes
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.ServerAuthentication
 import io.micronaut.security.rules.SecurityRuleResult
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.web.router.MethodBasedRouteMatch
+import io.micronaut.web.router.RouteMatch
 import reactor.test.StepVerifier
 import spock.lang.Specification
 
@@ -38,10 +40,10 @@ class UserPermissionSpec extends Specification {
         )
 
         when:
-        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication)
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest, authentication)
 
         then:
+        mockHttpRequest.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch) >> Optional.of(mockRouteMatch)
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
         1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> annotation
         1 * mockRouteMatch.getVariableValues() >> ["seasonId": 123]
@@ -59,10 +61,10 @@ class UserPermissionSpec extends Specification {
         )
 
         when:
-        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication)
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest, authentication)
 
         then:
+        mockHttpRequest.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch) >> Optional.of(mockRouteMatch)
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
         1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> annotation
         1 * mockRouteMatch.getVariableValues() >> ["seasonId": 123]
@@ -78,10 +80,10 @@ class UserPermissionSpec extends Specification {
         final authentication = null
 
         when:
-        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication)
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest, authentication)
 
         then:
+        mockHttpRequest.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch) >> Optional.of(mockRouteMatch)
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
         0 * _
         StepVerifier.create(result)
@@ -102,10 +104,10 @@ class UserPermissionSpec extends Specification {
                 .build()
 
         when:
-        sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication)
+        sggAuthorizationSecurityRule.check(mockHttpRequest, authentication)
 
         then:
+        mockHttpRequest.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch) >> Optional.of(mockRouteMatch)
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
         1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> misconfiguredAnnotation
         0 * _
@@ -119,10 +121,10 @@ class UserPermissionSpec extends Specification {
         )
 
         when:
-        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication)
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest, authentication)
 
         then:
+        mockHttpRequest.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch) >> Optional.of(mockRouteMatch)
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> false
         0 * _
         StepVerifier.create(result)
