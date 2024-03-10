@@ -15,6 +15,7 @@ import jakarta.persistence.*;
 public
 class UserPermissionDao {
 
+	// TODO: you should not be able to persist duplicate rows!
 	@Id
 	@Column(name = "USER_PERM_ID")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

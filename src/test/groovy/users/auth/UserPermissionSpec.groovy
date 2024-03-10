@@ -2,8 +2,6 @@ package users.auth
 
 import com.sgg.SggAuthorizationSecurityRule
 import com.sgg.SggSecurityRule
-import com.sgg.users.auth.ResourceType
-import com.sgg.users.model.PermissionDto
 import io.micronaut.core.annotation.AnnotationValue
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.ServerAuthentication
@@ -23,36 +21,113 @@ class UserPermissionSpec extends Specification {
     HttpRequest mockHttpRequest = Mock()
     SggAuthorizationSecurityRule sggAuthorizationSecurityRule
 
+    final AnnotationValue<SggSecurityRule> annotation = AnnotationValue.builder(SggSecurityRule.class)
+            .member("resourceType", SEASON)
+            .member("permissionType", WRITE)
+            .member("resourceIdName", "seasonId")
+            .build()
+
     def setup() {
         sggAuthorizationSecurityRule = new SggAuthorizationSecurityRule()
     }
 
     def 'should authorize user with proper permissions'() {
         given:
-        final permission = PermissionDto.builder()
-            .permissionType(WRITE)
-            .resourceType(SEASON)
-            .resourceId(123).build()
         final authentication = new ServerAuthentication(
-                "user123", null, ["claims": [permission]]
+                "user123", null, ["claims": ["SEASON:123": "WRITE"]]
         )
-        final annotation = AnnotationValue.builder(SggSecurityRule.class)
-                .member("resourceType", SEASON)
-                .member("permissionType", WRITE)
-                .member("resourceIdName", "seasonId")
-                .build()
 
         when:
-        final result = sggAuthorizationSecurityRule.check(mockHttpRequest, mockRouteMatch, authentication);
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
+                mockRouteMatch, authentication);
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
         1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> annotation
         1 * mockRouteMatch.getVariableValues() >> ["seasonId": 123]
+        0 * _
         StepVerifier.create(result)
-                .expectNext(SecurityRuleResult.ALLOWED)
+                .expectNext(SecurityRuleResult.UNKNOWN)
                 .expectComplete()
                 .verify()
     }
 
+    def 'should not authorize user with improper permissions'() {
+        given:
+        final authentication = new ServerAuthentication(
+                "user123", null, ["claims": ["SEASON:123": "READ"]]
+        )
+
+        when:
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
+                mockRouteMatch, authentication);
+
+        then:
+        1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
+        1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> annotation
+        1 * mockRouteMatch.getVariableValues() >> ["seasonId": 123]
+        0 * _
+        StepVerifier.create(result)
+                .expectNext(SecurityRuleResult.REJECTED)
+                .expectComplete()
+                .verify()
+    }
+
+    def 'should reject if not authenticated for a request that requires some sort of authorization'() {
+        given:
+        final authentication = null
+
+        when:
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
+                mockRouteMatch, authentication);
+
+        then:
+        1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
+        0 * _
+        StepVerifier.create(result)
+                .expectNext(SecurityRuleResult.REJECTED)
+                .expectComplete()
+                .verify()
+    }
+
+    def 'should throw exception for misconfigured authz annotation'() {
+        given:
+        final authentication = new ServerAuthentication(
+                "user123", null, ["claims": ["SEASON:123": "READ"]]
+        )
+        final misconfiguredAnnotation = AnnotationValue.builder(SggSecurityRule.class)
+                .member("resourceType", SEASON)
+                .member("permissionType", WRITE)
+                // .member("resourceIdName", "seasonId")
+                .build()
+
+        when:
+        sggAuthorizationSecurityRule.check(mockHttpRequest,
+                mockRouteMatch, authentication);
+
+        then:
+        1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
+        1 * mockRouteMatch.getAnnotation(SggSecurityRule.class) >> misconfiguredAnnotation
+        0 * _
+        thrown(RuntimeException)
+    }
+
+    def 'should continue processing if request does not require authz'() {
+        given:
+        final authentication = new ServerAuthentication(
+                "user123", null, ["claims": ["SEASON:123": "WRITE"]]
+        )
+
+        when:
+        final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
+                mockRouteMatch, authentication);
+
+        then:
+        1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> false
+        0 * _
+        StepVerifier.create(result)
+                .expectNext(SecurityRuleResult.UNKNOWN)
+                .expectComplete()
+                .verify()
+    }
 }

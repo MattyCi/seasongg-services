@@ -61,5 +61,4 @@ class DefaultUserServiceSpec extends Specification {
         where:
         username << ["username123!", "inval|d", "😊user123", "user_test_123", "user\$name", "not valid"]
     }
-
 }
