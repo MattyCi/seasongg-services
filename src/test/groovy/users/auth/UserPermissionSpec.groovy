@@ -1,7 +1,7 @@
 package users.auth
 
-import com.sgg.SggAuthorizationSecurityRule
-import com.sgg.SggSecurityRule
+import com.sgg.users.authz.SggAuthorizationSecurityRule
+import com.sgg.users.authz.SggSecurityRule
 import io.micronaut.core.annotation.AnnotationValue
 import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.ServerAuthentication
@@ -11,8 +11,8 @@ import io.micronaut.web.router.MethodBasedRouteMatch
 import reactor.test.StepVerifier
 import spock.lang.Specification
 
-import static com.sgg.users.auth.PermissionType.WRITE
-import static com.sgg.users.auth.ResourceType.SEASON
+import static com.sgg.users.authz.PermissionType.WRITE
+import static com.sgg.users.authz.ResourceType.SEASON
 
 @MicronautTest(startApplication = false)
 class UserPermissionSpec extends Specification {
@@ -39,7 +39,7 @@ class UserPermissionSpec extends Specification {
 
         when:
         final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication);
+                mockRouteMatch, authentication)
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
@@ -60,7 +60,7 @@ class UserPermissionSpec extends Specification {
 
         when:
         final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication);
+                mockRouteMatch, authentication)
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
@@ -79,7 +79,7 @@ class UserPermissionSpec extends Specification {
 
         when:
         final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication);
+                mockRouteMatch, authentication)
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
@@ -103,7 +103,7 @@ class UserPermissionSpec extends Specification {
 
         when:
         sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication);
+                mockRouteMatch, authentication)
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> true
@@ -120,7 +120,7 @@ class UserPermissionSpec extends Specification {
 
         when:
         final result = sggAuthorizationSecurityRule.check(mockHttpRequest,
-                mockRouteMatch, authentication);
+                mockRouteMatch, authentication)
 
         then:
         1 * mockRouteMatch.hasAnnotation(SggSecurityRule.class) >> false

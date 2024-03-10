@@ -94,5 +94,4 @@ class UserRegistrationSpec extends Specification {
         cleanup:
         userService.deleteUser("existing-user")
     }
-
 }

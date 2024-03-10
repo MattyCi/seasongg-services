@@ -1,7 +1,5 @@
-package com.sgg;
+package com.sgg.users.authz;
 
-import com.sgg.users.auth.PermissionType;
-import com.sgg.users.auth.ResourceType;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.security.authentication.Authentication;

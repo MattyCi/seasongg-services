@@ -1,7 +1,4 @@
-package com.sgg;
-
-import com.sgg.users.auth.PermissionType;
-import com.sgg.users.auth.ResourceType;
+package com.sgg.users.authz;
 
 public @interface SggSecurityRule {
 

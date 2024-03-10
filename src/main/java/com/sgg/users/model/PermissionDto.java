@@ -1,7 +1,7 @@
 package com.sgg.users.model;
 
-import com.sgg.users.auth.PermissionType;
-import com.sgg.users.auth.ResourceType;
+import com.sgg.users.authz.PermissionType;
+import com.sgg.users.authz.ResourceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

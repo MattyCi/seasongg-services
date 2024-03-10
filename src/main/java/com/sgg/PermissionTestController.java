@@ -1,5 +1,6 @@
 package com.sgg;
 
+import com.sgg.users.authz.SggSecurityRule;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -10,8 +11,8 @@ import io.micronaut.security.rules.SecurityRule;
 
 import java.security.Principal;
 
-import static com.sgg.users.auth.PermissionType.WRITE;
-import static com.sgg.users.auth.ResourceType.SEASON;
+import static com.sgg.users.authz.PermissionType.WRITE;
+import static com.sgg.users.authz.ResourceType.SEASON;
 
 // TODO: move this to a test
 @Secured(SecurityRule.IS_AUTHENTICATED)

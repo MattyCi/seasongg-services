@@ -1,6 +1,6 @@
 package com.sgg.users.security;
 
-import com.sgg.users.auth.RefreshTokenDao;
+import com.sgg.users.authn.RefreshTokenDao;
 import com.sgg.users.UserDao;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.repository.CrudRepository;

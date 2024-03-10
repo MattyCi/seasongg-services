@@ -1,4 +1,4 @@
-package com.sgg.users.auth;
+package com.sgg.users.authn;
 
 import com.sgg.users.UserDao;
 import io.micronaut.data.annotation.DateCreated;

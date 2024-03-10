@@ -1,4 +1,4 @@
-package com.sgg.users.auth;
+package com.sgg.users.authz;
 
 import com.sgg.users.model.PermissionDto;
 import org.mapstruct.Mapper;

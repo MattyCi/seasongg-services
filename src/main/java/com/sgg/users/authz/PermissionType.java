@@ -1,4 +1,4 @@
-package com.sgg.users.auth;
+package com.sgg.users.authz;
 
 public enum PermissionType {
     READ, WRITE

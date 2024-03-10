@@ -1,7 +1,7 @@
 package com.sgg.users;
 
-import com.sgg.users.auth.RefreshTokenDao;
-import com.sgg.users.auth.UserPermissionDao;
+import com.sgg.users.authn.RefreshTokenDao;
+import com.sgg.users.authz.UserPermissionDao;
 import io.micronaut.data.annotation.DateCreated;
 import lombok.*;
 
@@ -37,5 +37,4 @@ public class UserDao {
 
     @OneToMany(mappedBy = "userDao", cascade = CascadeType.ALL)
     private List<RefreshTokenDao> refreshTokenDaos;
-
 }

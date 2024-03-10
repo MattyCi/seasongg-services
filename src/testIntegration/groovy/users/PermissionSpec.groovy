@@ -2,12 +2,12 @@ package users
 
 import com.sgg.users.UserDao
 import com.sgg.users.UserRepository
-import com.sgg.users.auth.PermissionDao
-import com.sgg.users.auth.PermissionRepository
-import com.sgg.users.auth.PermissionType
-import com.sgg.users.auth.ResourceType
-import com.sgg.users.auth.UserPermissionDao
-import com.sgg.users.auth.UserPermissionRepository
+import com.sgg.users.authz.PermissionDao
+import com.sgg.users.authz.PermissionRepository
+import com.sgg.users.authz.PermissionType
+import com.sgg.users.authz.ResourceType
+import com.sgg.users.authz.UserPermissionDao
+import com.sgg.users.authz.UserPermissionRepository
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
 import org.hibernate.exception.ConstraintViolationException

@@ -1,7 +1,7 @@
 package com.sgg.users;
 
-import com.sgg.users.auth.PermissionMapper;
-import com.sgg.users.auth.UserPermissionDao;
+import com.sgg.users.authz.PermissionMapper;
+import com.sgg.users.authz.UserPermissionDao;
 import com.sgg.users.model.PermissionDto;
 import com.sgg.users.security.PasswordEncoder;
 import io.micronaut.core.annotation.Nullable;
@@ -43,7 +43,8 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
     }
 
     private AuthenticationResponse validateLoginFromDataSource(AuthenticationRequest<?, ?> authenticationRequest) {
-        var user = userRepository.findByUsernameIgnoreCase(authenticationRequest.getIdentity().toString());
+        var user = userRepository.findByUsernameIgnoreCaseWithUserPermissions(
+                authenticationRequest.getIdentity().toString());
 
         if (user.isEmpty() || !passwordMatches(authenticationRequest.getSecret().toString(), user.get().getPassword())) {
             log.info("failed login attempt for user {}", authenticationRequest.getIdentity());
