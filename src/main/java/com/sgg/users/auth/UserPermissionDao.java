@@ -6,7 +6,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "user_permissions")
+@Table(name = "user_permissions", uniqueConstraints = @UniqueConstraint(columnNames = {"USER_ID", "PERM_ID"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,7 +15,6 @@ import jakarta.persistence.*;
 public
 class UserPermissionDao {
 
-	// TODO: you should not be able to persist duplicate rows!
 	@Id
 	@Column(name = "USER_PERM_ID")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,5 +27,4 @@ class UserPermissionDao {
 	@ManyToOne
 	@JoinColumn(name = "PERM_ID")
 	private PermissionDao permissionDao;
-
 }
