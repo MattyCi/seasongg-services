@@ -4,7 +4,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.inject.Singleton;
 
 /**
- * This class is merely a workaround so that we can inject a Spring Security implementation class in Micronaut.
+ * This class is merely a wrapper so that we can inject a Spring Security implementation class in Micronaut.
  */
 @Singleton
 class BCryptPasswordEncoderService implements PasswordEncoder {

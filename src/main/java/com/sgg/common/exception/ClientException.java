@@ -1,6 +1,4 @@
-package com.sgg.users.exception;
-
-import com.sgg.common.exception.SggException;
+package com.sgg.common.exception;
 
 public class ClientException extends SggException {
     public ClientException(String message) {

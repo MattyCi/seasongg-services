@@ -1,7 +1,7 @@
 package com.sgg.users;
 
-import com.sgg.users.exception.NotFoundException;
-import com.sgg.users.exception.ClientException;
+import com.sgg.common.exception.NotFoundException;
+import com.sgg.common.exception.ClientException;
 import com.sgg.users.model.UserDto;
 import com.sgg.users.security.PasswordEncoder;
 import jakarta.inject.Inject;

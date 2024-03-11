@@ -1,6 +1,5 @@
-package com.sgg.users.exception;
+package com.sgg.common.exception;
 
-import com.sgg.common.exception.SggError;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
