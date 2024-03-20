@@ -1,5 +1,6 @@
 package com.sgg.seasons.model;
 
+import com.sgg.games.model.GameDao;
 import com.sgg.users.UserDao;
 import io.micronaut.data.annotation.DateCreated;
 import jakarta.persistence.*;
@@ -39,7 +40,9 @@ public class SeasonDao {
 
     // TODO: add rounds
 
-    // TODO: add game
+    @ManyToOne
+    @JoinColumn(name = "game_id")
+    private GameDao game;
 
     // TODO: add season standings
 }

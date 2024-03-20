@@ -1,5 +1,6 @@
 package com.sgg.seasons.model;
 
+import com.sgg.games.model.GameDto;
 import com.sgg.users.model.UserDto;
 import lombok.*;
 
@@ -19,7 +20,7 @@ public class SeasonDto {
 
     // TODO: add rounds
 
-    // TODO: add game
+    private GameDto game;
 
     // TODO: add season standings
 }
