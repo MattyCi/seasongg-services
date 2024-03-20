@@ -1,5 +1,7 @@
-package com.sgg.games.model;
+package com.sgg.games;
 
+import com.sgg.games.model.GameDao;
+import com.sgg.games.model.GameDto;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
