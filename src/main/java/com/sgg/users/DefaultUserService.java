@@ -28,6 +28,8 @@ public class DefaultUserService implements UserService {
 
         checkForExistingUser(userRegistrationRequest);
 
+        // TODO: trim username whitespace
+
         val userDao = UserDao.builder()
             .username(userRegistrationRequest.getUsername())
             .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))

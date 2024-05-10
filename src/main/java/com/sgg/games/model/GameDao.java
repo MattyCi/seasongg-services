@@ -20,7 +20,7 @@ public class GameDao {
     @Column(name = "game_id", unique = true)
     private Long gameId;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String name;
 
     @OneToMany(mappedBy = "game")

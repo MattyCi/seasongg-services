@@ -22,26 +22,27 @@ public class SeasonDao {
     @Column(name = "season_id")
     private Long seasonId;
 
+    @Column(nullable = false)
     private String name;
 
     @DateCreated
-    @Column(name = "start_date", updatable = false)
+    @Column(name = "start_date", updatable = false, nullable = false)
     private OffsetDateTime startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private OffsetDateTime endDate;
 
     @ManyToOne
-    @JoinColumn
+    @JoinColumn(nullable = false)
     private UserDao creator;
 
-    @Column(length = 1)
+    @Column(length = 32, nullable = false)
     private String status;
 
     // TODO: add rounds
 
     @ManyToOne
-    @JoinColumn(name = "game_id")
+    @JoinColumn(name = "game_id", nullable = true) // TODO CHANGE
     private GameDao game;
 
     // TODO: add season standings

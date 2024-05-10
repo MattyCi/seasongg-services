@@ -23,13 +23,14 @@ public class UserDao {
     @Column(name = "user_id")
     private Long userId;
 
-    // TODO: add constraints here - ie. the table should not allow null usernames
+    @Column(nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
     @DateCreated
-    @Column(name = "registration_time", updatable = false)
+    @Column(name = "registration_time", updatable = false, nullable = false)
     private OffsetDateTime registrationTime;
 
     @OneToMany(mappedBy = "userDao", cascade = CascadeType.ALL)

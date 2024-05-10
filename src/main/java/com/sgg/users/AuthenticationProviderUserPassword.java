@@ -37,7 +37,6 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
     public Mono<AuthenticationResponse> authenticate(@Nullable HttpRequest<?> httpRequest,
                                                      AuthenticationRequest<?, ?> authenticationRequest) {
         log.debug("login attempt for: {}", authenticationRequest.getIdentity());
-
         return Mono.fromCallable(() -> validateLoginFromDataSource(authenticationRequest))
                 .subscribeOn(Schedulers.boundedElastic());
     }
@@ -45,22 +44,19 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
     private AuthenticationResponse validateLoginFromDataSource(AuthenticationRequest<?, ?> authenticationRequest) {
         var user = userRepository.findByUsernameIgnoreCaseWithUserPermissions(
                 authenticationRequest.getIdentity().toString());
-
         if (user.isEmpty() || !passwordMatches(authenticationRequest.getSecret().toString(), user.get().getPassword())) {
             log.info("failed login attempt for user {}", authenticationRequest.getIdentity());
             return new AuthenticationFailed(ERR_USERNAME_OR_PASSWORD_FAILED);
         }
-
-        Map<String, Object> claims = getUserClaims(user.get());
-
-        return AuthenticationResponse.success(authenticationRequest.getIdentity().toString(), claims);
+        Map<String, Object> attributes = addAttributes(user.get());
+        return AuthenticationResponse.success(authenticationRequest.getIdentity().toString(), attributes);
     }
 
     private boolean passwordMatches(String givenPassword, String storedPassword) {
         return passwordEncoder.matches(givenPassword, storedPassword);
     }
 
-    private Map<String, Object> getUserClaims(UserDao user) {
+    private Map<String, Object> addAttributes(UserDao user) {
         val permissions = user.getUserPermissionEntities().stream()
                 .map(UserPermissionDao::getPermissionDao)
                 .map(dao -> permissionMapper.permissionToPermissionDto(dao))
@@ -68,7 +64,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
                         this::formatPermission,
                         PermissionDto::getPermissionType
                 ));
-        return Map.of("claims", permissions);
+        return Map.of("claims", permissions, "userId", user.getUserId());
     }
 
     private String formatPermission(PermissionDto permissionDto) {
