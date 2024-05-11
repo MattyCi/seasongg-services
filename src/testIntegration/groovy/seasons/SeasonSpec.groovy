@@ -42,6 +42,7 @@ class SeasonSpec extends AbstractSpecification {
         seasonRepository.count() == 1
         rsp.getBody().isPresent()
         rsp.getBody().get().status == SeasonStatus.ACTIVE
+        rsp.getBody().get().creator.username == "integ-user"
     }
 
     def "should not create invalid season"() {
