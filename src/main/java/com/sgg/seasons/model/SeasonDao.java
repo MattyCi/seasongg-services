@@ -42,7 +42,7 @@ public class SeasonDao {
     // TODO: add rounds
 
     @ManyToOne
-    @JoinColumn(name = "game_id", nullable = true) // TODO CHANGE
+    @JoinColumn(name = "game_id", nullable = false)
     private GameDao game;
 
     // TODO: add season standings

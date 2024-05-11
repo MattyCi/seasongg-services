@@ -8,7 +8,6 @@ import com.sgg.games.model.GameMapper;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.seasons.model.SeasonMapper;
 import com.sgg.seasons.model.SeasonStatus;
-import com.sgg.users.UserDao;
 import com.sgg.users.UserService;
 import com.sgg.users.model.UserDto;
 import io.micronaut.security.utils.SecurityService;
@@ -46,7 +45,7 @@ public class SeasonService {
         if (!violations.isEmpty()) {
             throw new ClientException(violations.stream()
                     .map(ConstraintViolation::getMessage)
-                    .collect(Collectors.joining(", "))
+                    .collect(Collectors.joining(" "))
             );
         }
         season.setName(season.getName().trim());

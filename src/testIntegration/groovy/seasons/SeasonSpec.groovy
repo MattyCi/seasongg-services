@@ -1,8 +1,10 @@
 package seasons
 
+import com.sgg.common.exception.SggError
 import com.sgg.games.model.GameDto
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.model.SeasonDto
+import com.sgg.seasons.model.SeasonStatus
 import common.AbstractSpecification
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -38,6 +40,30 @@ class SeasonSpec extends AbstractSpecification {
         then:
         rsp.status == HttpStatus.OK
         seasonRepository.count() == 1
+        rsp.getBody().isPresent()
+        rsp.getBody().get().status == SeasonStatus.ACTIVE
+    }
+
+    def "should not create invalid season"() {
+        given:
+        def season = new SeasonDto(
+                name: "@#\$#",
+                endDate: null,
+                game: new GameDto(
+                        gameId: 123,
+                        name: "Catan"
+                )
+        )
+        def request = HttpRequest.POST('/v1/seasons', season)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+
+        when:
+        client.toBlocking().exchange(request, SeasonDto)
+
+        then:
+        def ex = thrown(HttpClientResponseException)
+        assert ex.getStatus() == HttpStatus.BAD_REQUEST
+        assert ex.response.getBody(SggError).get().errorMessage == "The season must have an end date. Invalid characters detected in the season name."
     }
 
     def "should prevent season creation if not logged in"() {

@@ -18,15 +18,12 @@ class DataBootstrap implements ApplicationEventListener<ServerStartupEvent> {
 
     @Override
     void onApplicationEvent(ServerStartupEvent event) {
-
-        // TODO: REMOVE THIS
-        println "THIS SHOULD ONLY PRINT IN THE INTEG TESTS!!!"
-
         try {
             userService.getUserByUsername("integ-user")
         } catch (NotFoundException ignored) {
             userService.registerUser(
-                    new UserRegistrationRequest("integ-user", "test-pw", "test-pw"))
+                    new UserRegistrationRequest("integ-user", "test-pw", "test-pw")
+            )
         }
     }
 }
