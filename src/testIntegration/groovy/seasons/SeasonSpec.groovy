@@ -36,13 +36,14 @@ class SeasonSpec extends AbstractSpecification {
 
         when:
         def rsp = client.toBlocking().exchange(request, SeasonDto)
+        def createdSeason = rsp.getBody().get()
 
         then:
         rsp.status == HttpStatus.OK
         seasonRepository.count() == 1
-        rsp.getBody().isPresent()
-        rsp.getBody().get().status == SeasonStatus.ACTIVE
-        rsp.getBody().get().creator.username == "integ-user"
+        createdSeason.name == season.name
+        createdSeason.status == SeasonStatus.ACTIVE
+        createdSeason.creator.username == "integ-user"
     }
 
     def "should not create invalid season"() {
