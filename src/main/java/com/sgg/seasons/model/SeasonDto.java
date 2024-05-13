@@ -33,6 +33,7 @@ public class SeasonDto {
     private SeasonStatus status;
 
     // TODO: add rounds
+    private String rounds;
 
     @NotNull(message = "{season.game.NotNull}")
     private GameDto game;

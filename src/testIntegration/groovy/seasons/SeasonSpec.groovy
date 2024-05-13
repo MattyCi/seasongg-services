@@ -1,6 +1,7 @@
 package seasons
 
 import com.sgg.common.exception.SggError
+import com.sgg.games.GameRepository
 import com.sgg.games.model.GameDto
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.model.SeasonDto
@@ -20,6 +21,9 @@ class SeasonSpec extends AbstractSpecification {
 
     @Inject
     private SeasonRepository seasonRepository
+
+    @Inject
+    private GameRepository gameRepository
 
     def "should create season"() {
         given:
@@ -86,5 +90,83 @@ class SeasonSpec extends AbstractSpecification {
         then:
         def e = thrown(HttpClientResponseException)
         e.status == HttpStatus.UNAUTHORIZED
+    }
+
+    def "should disallow duplicate season names"() {
+        given:
+        def validSeason = new SeasonDto(
+                name: "same-name",
+                endDate: OffsetDateTime.parse("3000-04-17T22:00:00-05:00"),
+                game: new GameDto(
+                        gameId: 456,
+                        name: "valid-game"
+                )
+        )
+        def invalidSeason = new SeasonDto(
+                name: "same-name",
+                endDate: OffsetDateTime.parse("3000-04-17T22:00:00-05:00"),
+                game: new GameDto(
+                        gameId: 789,
+                        name: "should-rollback"
+                ),
+                rounds: "temp"
+        )
+        def validRequest = HttpRequest.POST('/v1/seasons', validSeason)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+        def invalidRequest = HttpRequest.POST('/v1/seasons', invalidSeason)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+
+        when: "persisting valid season"
+        def rsp = client.toBlocking().exchange(validRequest, SeasonDto)
+
+        then: "request is valid"
+        rsp.status == HttpStatus.OK
+
+        when: "creating season with duplicate name"
+        client.toBlocking().exchange(invalidRequest, SeasonDto)
+
+        then:
+        def e = thrown(HttpClientResponseException)
+        e.status == HttpStatus.BAD_REQUEST
+        assert e.response.getBody(SggError).get().errorMessage == "A season with that name already exists."
+    }
+
+    def "should rollback entire transaction if an error occurs"() {
+        given:
+        def validSeason = new SeasonDto(
+                name: "same-name",
+                endDate: OffsetDateTime.parse("3000-04-17T22:00:00-05:00"),
+                game: new GameDto(
+                        gameId: 456,
+                        name: "valid-game"
+                )
+        )
+        def invalidSeason = new SeasonDto(
+                name: "same-name",
+                endDate: OffsetDateTime.parse("3000-04-17T22:00:00-05:00"),
+                game: new GameDto(
+                        gameId: 789,
+                        name: "should-rollback"
+                ),
+                rounds: "temp"
+        )
+        def validRequest = HttpRequest.POST('/v1/seasons', validSeason)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+        def invalidRequest = HttpRequest.POST('/v1/seasons', invalidSeason)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+
+        when: "persisting valid season"
+        def rsp = client.toBlocking().exchange(validRequest, SeasonDto)
+
+        then: "request is valid"
+        rsp.status == HttpStatus.OK
+
+        when: "creating season with rounds"
+        client.toBlocking().exchange(invalidRequest, SeasonDto)
+
+        then: "the entire transaction should have rolled back"
+        def e = thrown(HttpClientResponseException)
+        e.status == HttpStatus.BAD_REQUEST
+        gameRepository.count() == 1
     }
 }

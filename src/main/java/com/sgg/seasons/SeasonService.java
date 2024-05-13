@@ -38,8 +38,6 @@ public class SeasonService {
 
     @Transactional
     public SeasonDto createSeason(SeasonDto season) {
-        // TODO: we need to validate the game first
-        maybePersistGame(season.getGame());
         initSeason(season);
         val violations = validator.validate(season);
         if (!violations.isEmpty()) {
@@ -49,6 +47,15 @@ public class SeasonService {
             );
         }
         season.setName(season.getName().trim());
+
+        // TODO: we need to validate the game first
+        maybePersistGame(season.getGame());
+
+        if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
+            throw new ClientException("A season with that name already exists.");
+
+        if (season.getRounds() != null)
+            throw new ClientException("Seasons cannot have rounds upon creation.");
 
         seasonRepository.save(seasonMapper.toSeasonDao(season));
         return season;

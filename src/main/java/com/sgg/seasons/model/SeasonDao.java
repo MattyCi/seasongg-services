@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "seasons", uniqueConstraints = @UniqueConstraint(columnNames = "name", name = "UQ_name"))
@@ -22,7 +23,7 @@ public class SeasonDao {
     @Column(name = "season_id")
     private Long seasonId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @DateCreated
@@ -40,6 +41,7 @@ public class SeasonDao {
     private String status;
 
     // TODO: add rounds
+    private String rounds;
 
     @ManyToOne
     @JoinColumn(name = "game_id", nullable = false)
