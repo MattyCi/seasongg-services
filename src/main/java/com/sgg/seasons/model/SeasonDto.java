@@ -3,6 +3,7 @@ package com.sgg.seasons.model;
 import com.sgg.games.model.GameDto;
 import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.Introspected;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -36,6 +37,7 @@ public class SeasonDto {
     private String rounds;
 
     @NotNull(message = "{season.game.NotNull}")
+    @Valid
     private GameDto game;
 
     // TODO: add season standings

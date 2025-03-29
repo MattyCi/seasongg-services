@@ -48,7 +48,6 @@ public class SeasonService {
         }
         season.setName(season.getName().trim());
 
-        // TODO: we need to validate the game first
         maybePersistGame(season.getGame());
 
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
