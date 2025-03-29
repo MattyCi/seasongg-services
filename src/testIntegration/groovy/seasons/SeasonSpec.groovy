@@ -16,7 +16,7 @@ import jakarta.inject.Inject
 
 import java.time.OffsetDateTime
 
-@MicronautTest
+@MicronautTest(transactional = false)
 class SeasonSpec extends AbstractSpecification {
 
     @Inject
@@ -24,6 +24,11 @@ class SeasonSpec extends AbstractSpecification {
 
     @Inject
     private GameRepository gameRepository
+
+    def cleanup() {
+        seasonRepository.deleteAll()
+        gameRepository.deleteAll()
+    }
 
     def "should create season"() {
         given:
@@ -128,7 +133,7 @@ class SeasonSpec extends AbstractSpecification {
         then:
         def e = thrown(HttpClientResponseException)
         e.status == HttpStatus.BAD_REQUEST
-        assert e.response.getBody(SggError).get().errorMessage == "A season with that name already exists."
+        e.response.getBody(SggError).get().errorMessage == "A season with that name already exists."
     }
 
     def "should rollback entire transaction if an error occurs"() {
@@ -164,9 +169,10 @@ class SeasonSpec extends AbstractSpecification {
         when: "creating season with rounds"
         client.toBlocking().exchange(invalidRequest, SeasonDto)
 
-        then: "the entire transaction should have rolled back"
+        then: "the second game should not have been added (the transaction should have rolled back)"
         def e = thrown(HttpClientResponseException)
         e.status == HttpStatus.BAD_REQUEST
         gameRepository.count() == 1
+        e.response.getBody(SggError).get().errorMessage == "A season with that name already exists."
     }
 }
