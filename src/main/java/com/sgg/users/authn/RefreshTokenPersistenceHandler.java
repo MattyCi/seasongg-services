@@ -48,7 +48,7 @@ public class RefreshTokenPersistenceHandler implements RefreshTokenPersistence {
     }
 
     private void persistTokenToUser(String refreshToken, UserDao user) {
-        log.info("persisting refresh token for user {}", user.getUserId());
+        log.debug("persisting refresh token for user {}", user.getUserId());
 
         refreshTokenService.persistRefreshToken(RefreshTokenDao.builder()
                 .refreshToken(refreshToken)
