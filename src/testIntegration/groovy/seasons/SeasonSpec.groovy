@@ -6,6 +6,9 @@ import com.sgg.games.model.GameDto
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.model.SeasonDto
 import com.sgg.seasons.model.SeasonStatus
+import com.sgg.users.authz.PermissionRepository
+import com.sgg.users.authz.PermissionType
+import com.sgg.users.authz.UserPermissionRepository
 import common.AbstractSpecification
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
@@ -24,6 +27,12 @@ class SeasonSpec extends AbstractSpecification {
 
     @Inject
     private GameRepository gameRepository
+
+    @Inject
+    private PermissionRepository permissionRepository
+
+    @Inject
+    private UserPermissionRepository userPermissionRepository
 
     def cleanup() {
         seasonRepository.deleteAll()
@@ -53,6 +62,21 @@ class SeasonSpec extends AbstractSpecification {
         createdSeason.name == season.name
         createdSeason.status == SeasonStatus.ACTIVE
         createdSeason.creator.username == "integ-user"
+
+        and: "should create write permissions tied to the seasonId"
+        def permission = permissionRepository.findAll().first()
+        permission.permissionType == PermissionType.WRITE
+        permission.resourceId == seasonRepository.findAll().first().seasonId
+
+        and: "should tie the permission to the user who created the season"
+        def userPermission = userPermissionRepository.findAll().first()
+        userPermission.userDao.username == rsp.body().creator.username
+        userPermission.permissionDao.permId == permission.permId
+
+        cleanup:
+        seasonRepository.deleteAll()
+        userPermissionRepository.deleteAll()
+        permissionRepository.deleteAll()
     }
 
     def "should not create invalid season"() {

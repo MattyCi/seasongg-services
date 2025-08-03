@@ -8,7 +8,9 @@ import com.sgg.games.model.GameMapper;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.seasons.model.SeasonMapper;
 import com.sgg.seasons.model.SeasonStatus;
+import com.sgg.users.UserMapper;
 import com.sgg.users.UserService;
+import com.sgg.users.authz.*;
 import com.sgg.users.model.UserDto;
 import io.micronaut.security.utils.SecurityService;
 import io.micronaut.validation.validator.Validator;
@@ -35,10 +37,14 @@ public class SeasonService {
     private final SeasonMapper seasonMapper;
     private final GameMapper gameMapper;
     private final Validator validator;
+    private final UserMapper userMapper;
+    private final PermissionRepository permissionRepository;
+    private final UserPermissionRepository userPermissionRepository;
 
     @Transactional
     public SeasonDto createSeason(SeasonDto season) {
-        initSeason(season);
+        val creator = getCreator();
+        initSeason(season, creator);
         val violations = validator.validate(season);
         if (!violations.isEmpty()) {
             throw new ClientException(violations.stream()
@@ -56,29 +62,45 @@ public class SeasonService {
         if (season.getRounds() != null)
             throw new ClientException("Seasons cannot have rounds upon creation.");
 
-        seasonRepository.save(seasonMapper.toSeasonDao(season));
+        val persistedSeason = seasonRepository.save(seasonMapper.toSeasonDao(season));
+
+        val permission = PermissionDao.builder()
+                .permissionType(PermissionType.WRITE)
+                .resourceId(persistedSeason.getSeasonId())
+                .resourceType(ResourceType.SEASON)
+                .build();
+
+        val userPermission = UserPermissionDao.builder()
+                .permissionDao(permission)
+                .userDao(userMapper.userDtoToUser(creator))
+                .build();
+
+        permissionRepository.save(permission);
+
+        userPermissionRepository.save(userPermission);
+
         return season;
+    }
+
+    private UserDto getCreator() {
+        return securityService.getAuthentication()
+                .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
+                .getAttributes()
+                .entrySet().stream()
+                .filter((e) -> "userId".equals(e.getKey()))
+                .map((e) -> userService.getUserById(Long.valueOf(e.getValue().toString())))
+                .findFirst()
+                .orElseThrow(() -> new SggException("Unexpected error occurred trying to retrieve current user."));
+    }
+
+    private void initSeason(SeasonDto season, UserDto creator) {
+        season.setCreator(creator);
+        season.setStatus(SeasonStatus.ACTIVE);
+        season.setStartDate(OffsetDateTime.now());
     }
 
     private void maybePersistGame(GameDto game) {
         if (gameRepository.findById(game.getGameId()).isEmpty())
             gameRepository.save(gameMapper.toGameDao(game));
-    }
-
-    private void initSeason(SeasonDto season) {
-        season.setCreator(getCreator());
-        season.setStatus(SeasonStatus.ACTIVE);
-        season.setStartDate(OffsetDateTime.now());
-    }
-
-    private UserDto getCreator() {
-       return securityService.getAuthentication()
-               .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
-               .getAttributes()
-               .entrySet().stream()
-               .filter((e) -> "userId".equals(e.getKey()))
-               .map((e) -> userService.getUserById(Long.valueOf(e.getValue().toString())))
-               .findFirst()
-               .orElseThrow(() -> new SggException("Unexpected error occurred trying to retrieve current user."));
     }
 }
