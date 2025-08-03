@@ -25,6 +25,4 @@ public class GameDto {
     @NotNull(message = "{game.name.NotNull}")
     @Pattern(regexp = "^[\\p{L}\\p{N} :\\-'()!.,&\\[\"+*]+$", message = "{game.name.Pattern}")
     private String name;
-
-    private List<SeasonDto> seasons;
 }
