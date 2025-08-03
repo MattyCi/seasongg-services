@@ -6,6 +6,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
@@ -18,6 +19,13 @@ import lombok.val;
 public class SeasonController {
 
     SeasonService seasonService;
+
+    @Get("/{id}")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<SeasonDto> getSeasonById(String id) {
+        val result = seasonService.getSeason(id);
+        return HttpResponse.status(HttpStatus.OK).body(result);
+    }
 
     @Post
     @Secured(SecurityRule.IS_AUTHENTICATED)

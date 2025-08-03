@@ -1,6 +1,7 @@
 package com.sgg.seasons;
 
 import com.sgg.common.exception.ClientException;
+import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
 import com.sgg.games.GameRepository;
 import com.sgg.games.model.GameDto;
@@ -16,7 +17,7 @@ import io.micronaut.security.utils.SecurityService;
 import io.micronaut.validation.validator.Validator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.transaction.Transactional;
+import io.micronaut.transaction.annotation.Transactional;
 import jakarta.validation.ConstraintViolation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +30,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class SeasonService {
-    public static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to create a season.";
+    private static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to create a season.";
     private final SeasonRepository seasonRepository;
+    // TODO: refactor this - game repo should be encapsulated in a service
     private final GameRepository gameRepository;
     private final SecurityService securityService;
     private final UserService userService;
@@ -38,8 +40,25 @@ public class SeasonService {
     private final GameMapper gameMapper;
     private final Validator validator;
     private final UserMapper userMapper;
+    // TODO: refactor this - both of these things should be in a service
     private final PermissionRepository permissionRepository;
     private final UserPermissionRepository userPermissionRepository;
+
+    @Transactional(readOnly = true)
+    public SeasonDto getSeason(String id) {
+        long parsedId;
+        try {
+            parsedId = Long.parseLong(id);
+        } catch (NumberFormatException e) {
+            throw new ClientException("Invalid seasonId provided.");
+        }
+        val season = seasonRepository.findById(parsedId);
+        if (season.isEmpty()) {
+            throw new NotFoundException("No season was found for the given ID.");
+        } else {
+            return seasonMapper.toSeasonDto(season.get());
+        }
+    }
 
     @Transactional
     public SeasonDto createSeason(SeasonDto season) {

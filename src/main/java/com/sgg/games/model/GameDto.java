@@ -1,5 +1,6 @@
 package com.sgg.games.model;
 
+import com.sgg.seasons.model.SeasonDto;
 import io.micronaut.core.annotation.Introspected;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

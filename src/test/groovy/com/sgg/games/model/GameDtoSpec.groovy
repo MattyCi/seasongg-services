@@ -55,32 +55,44 @@ class GameDtoSpec extends Specification {
     }
 
     def "should throw validation error for null game IDs"() {
+        given:
+        def nullIdGame = GameDto.builder().gameId(null).name("name").build()
+
         when:
-        def errs = validator.validate(new GameDto(null, "name", null))
+        def errs = validator.validate(nullIdGame)
 
         then:
         errs.first().message == "The game ID is required."
     }
 
     def "should throw validation error for negative game IDs"() {
+        given:
+        def negativeIdGame = GameDto.builder().gameId(-1).name("name").build()
+
         when:
-        def errs = validator.validate(new GameDto(-1, "name", null))
+        def errs = validator.validate(negativeIdGame)
 
         then:
         errs.first().message == "The game ID must be positive."
     }
 
     def "should throw validation error for null game name"() {
+        given:
+        def nullNameGame = GameDto.builder().gameId(1).name(null).build()
+
         when:
-        def errs = validator.validate(new GameDto(1, null, null))
+        def errs = validator.validate(nullNameGame)
 
         then:
         errs.first().message == "The game must have a name associated with it."
     }
 
     def "should throw validation error for invalid game names"() {
+        given:
+        def game = GameDto.builder().name(name).gameId(1).build()
+
         when:
-        def errs = validator.validate(new GameDto(1, name, null))
+        def errs = validator.validate(game)
 
         then:
         errs.size() == 1
