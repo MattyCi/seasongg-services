@@ -21,7 +21,7 @@ public class SeasonController {
 
     @Post
     @Secured(SecurityRule.IS_AUTHENTICATED)
-    public HttpResponse<SeasonDto> register(@Body SeasonDto season) {
+    public HttpResponse<SeasonDto> createSeason(@Body SeasonDto season) {
         val result = seasonService.createSeason(season);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
