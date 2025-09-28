@@ -72,6 +72,8 @@ public class SggAuthorizationSecurityRule implements SecurityRule<HttpRequest<?>
     @SuppressWarnings("unchecked")
     private boolean isAllowed(@NonNull Authentication authentication, String resourceId,
                               PermissionType permissionType, String resourceType) {
+        if (authentication.getAttributes() == null)
+            return false;
         val claims = (Map<String, String>) authentication.getAttributes().get("claims");
         val matchedPerm = claims.get(String.format("%s:%s", resourceType, resourceId));
         return matchedPerm != null && matchedPerm.equals(permissionType.toString());

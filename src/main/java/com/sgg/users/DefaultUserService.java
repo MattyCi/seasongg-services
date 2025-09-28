@@ -10,6 +10,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+
 @Singleton
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
@@ -33,6 +36,7 @@ public class DefaultUserService implements UserService {
         val userDao = UserDao.builder()
             .username(userRegistrationRequest.getUsername())
             .password(passwordEncoder.encode(userRegistrationRequest.getPassword()))
+            .registrationTime(OffsetDateTime.now(ZoneId.of("America/New_York")))
             .build();
 
         userRepository.save(userDao);

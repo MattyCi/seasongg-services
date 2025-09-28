@@ -61,15 +61,9 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
                 .map(UserPermissionDao::getPermissionDao)
                 .map(dao -> permissionMapper.permissionToPermissionDto(dao))
                 .collect(Collectors.toMap(
-                        this::formatPermission,
+                        PermissionDto::formatPermission,
                         PermissionDto::getPermissionType
                 ));
         return Map.of("claims", permissions, "userId", user.getUserId());
-    }
-
-    private String formatPermission(PermissionDto permissionDto) {
-        return String.format("%s:%s",
-                permissionDto.getResourceType(),
-                permissionDto.getResourceId());
     }
 }
