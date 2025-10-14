@@ -42,6 +42,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
     }
 
     private AuthenticationResponse validateLoginFromDataSource(AuthenticationRequest<?, ?> authenticationRequest) {
+        // TODO: look into hibernate warning HHH90003004 here
         var user = userRepository.findByUsernameIgnoreCaseWithUserPermissions(
                 authenticationRequest.getIdentity().toString());
         if (user.isEmpty() || !passwordMatches(authenticationRequest.getSecret().toString(), user.get().getPassword())) {

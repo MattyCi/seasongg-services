@@ -31,7 +31,7 @@ public class SeasonValidator implements ConstraintValidator<ValidSeason, SeasonD
         }
 
         if (season.getEndDate().isBefore(season.getStartDate())) {
-            context.messageTemplate("Please choose a date in the future for your season end date.");
+            context.messageTemplate("The season end date must be after the season start date.");
             return false;
         }
         return true;

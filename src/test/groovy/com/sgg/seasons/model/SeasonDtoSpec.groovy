@@ -68,7 +68,7 @@ class SeasonDtoSpec extends Specification {
         new SeasonDto(creator: null)     | "The season must have a creator associated with it."
         new SeasonDto(status: null)      | "The season status was not provided."
         new SeasonDto(game: null)        | "The season must have a game associated with it."
-        endDateBeforeStartSeason         | "Please choose a date in the future for your season end date."
+        endDateBeforeStartSeason         | "The season end date must be after the season start date."
     }
 
     @Shared
