@@ -6,36 +6,45 @@ import com.sgg.games.GameRepository
 import com.sgg.games.model.GameMapper
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.SeasonService
+import com.sgg.users.UserDao
 import com.sgg.users.UserMapper
+import com.sgg.users.UserMapperImpl
 import com.sgg.users.UserService
+import com.sgg.users.authz.PermissionDao
 import com.sgg.users.authz.PermissionRepository
+import com.sgg.users.authz.PermissionType
+import com.sgg.users.authz.ResourceType
+import com.sgg.users.authz.UserPermissionDao
 import com.sgg.users.authz.UserPermissionRepository
 import io.micronaut.security.utils.SecurityService
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
-import jakarta.inject.Inject
 import spock.lang.Specification
+
+import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class SeasonServiceSpec extends Specification {
 
     SeasonRepository seasonRepository = Mock()
-    SeasonMapper seasonMapper = Mock()
-
-    @Inject
-    Validator validator
+    UserService userService = Mock()
+    SeasonMapper seasonMapper = new SeasonMapperImpl()
+    Validator validator = Mock()
+    UserMapper userMapper = new UserMapperImpl()
+    PermissionRepository permissionRepository = Mock()
+    UserPermissionRepository userPermissionRepository = Mock()
 
     SeasonService seasonService = new SeasonService(
             seasonRepository,
             Mock(GameRepository),
             Mock(SecurityService),
-            Mock(UserService),
+            userService,
             seasonMapper,
             Mock(GameMapper),
             validator,
-            Mock(UserMapper),
-            Mock(PermissionRepository),
-            Mock(UserPermissionRepository)
+            userMapper,
+            permissionRepository,
+            userPermissionRepository
     )
 
     def "should get season"() {
@@ -47,7 +56,6 @@ class SeasonServiceSpec extends Specification {
 
         then:
         1 * seasonRepository.findById(123) >> Optional.of(dao)
-        1 * seasonMapper.toSeasonDto(dao) >> SeasonDto.builder().seasonId(123).build()
         0 * _
         result.seasonId == 123
     }
@@ -71,5 +79,53 @@ class SeasonServiceSpec extends Specification {
         0 * _
         def e = thrown(ClientException)
         e.message == "Invalid seasonId provided."
+    }
+
+    def "should update season admin"() {
+        given:
+        def oldAdmin = UserDao.builder().userId(123).username("old-admin").build()
+        def newAdmin = UserDao.builder().userId(456).username("new-admin").build()
+        def oldSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(oldAdmin)
+                .startDate(OffsetDateTime.now())
+                .endDate(OffsetDateTime.parse("3000-01-01T00:00:00-00:00"))
+                .name("New Season")
+                .build()
+        def newSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(newAdmin)
+                .startDate(OffsetDateTime.now())
+                .endDate(OffsetDateTime.parse("3000-01-01T00:00:00-00:00"))
+                .name("New Season")
+                .build()
+        def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
+        def adminPermission = Mock(PermissionDao)
+        def oldUserPerm = Mock(UserPermissionDao)
+
+        when:
+        def updated = seasonService.updateSeason("999", newSeasonDto)
+
+        then:
+        1 * validator.validate(newSeasonDto) >> []
+        1 * seasonRepository.findById(999) >> Optional.of(oldSeason)
+        1 * userService.getUserById(456) >> userMapper.userToUserDto(newAdmin)
+        1 * permissionRepository.findByResourceIdAndResourceTypeAndPermissionType(
+                999, ResourceType.SEASON, PermissionType.WRITE
+        ) >> Optional.of(adminPermission)
+        1 * userPermissionRepository.findByUserDaoAndPermissionDao({ UserDao u ->
+            u.userId == 123
+        }, adminPermission) >> Optional.of(oldUserPerm)
+        1 * userPermissionRepository.delete(oldUserPerm)
+        1 * userPermissionRepository.save({ UserPermissionDao up ->
+            up.userDao.userId == 456
+            up.permissionDao == adminPermission
+        })
+        1 * seasonRepository.update({ SeasonDao s ->
+            s.creator.userId == 456
+        }) >> newSeason
+        0 * _
+        updated.creator.username == "new-admin"
+        updated.creator.userId == 456
     }
 }
