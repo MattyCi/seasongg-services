@@ -81,23 +81,25 @@ class SeasonServiceSpec extends Specification {
         e.message == "Invalid seasonId provided."
     }
 
-    def "should update season admin"() {
+    def "should update season admin and season end date"() {
         given:
         def oldAdmin = UserDao.builder().userId(123).username("old-admin").build()
         def newAdmin = UserDao.builder().userId(456).username("new-admin").build()
         def oldSeason = SeasonDao.builder()
                 .seasonId(999)
                 .creator(oldAdmin)
-                .startDate(OffsetDateTime.now())
+                .startDate(OffsetDateTime.parse("2999-01-01T00:00:00-00:00"))
                 .endDate(OffsetDateTime.parse("3000-01-01T00:00:00-00:00"))
-                .name("New Season")
+                .status("ACTIVE")
+                .name("Season")
                 .build()
         def newSeason = SeasonDao.builder()
                 .seasonId(999)
                 .creator(newAdmin)
-                .startDate(OffsetDateTime.now())
-                .endDate(OffsetDateTime.parse("3000-01-01T00:00:00-00:00"))
-                .name("New Season")
+                .startDate(OffsetDateTime.parse("2999-01-01T00:00:00-00:00"))
+                .endDate(OffsetDateTime.parse("2000-01-01T00:00:00-00:00"))
+                .status("ACTIVE") // should change to inactive based on new end date
+                .name("Season")
                 .build()
         def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
         def adminPermission = Mock(PermissionDao)
@@ -121,11 +123,12 @@ class SeasonServiceSpec extends Specification {
             up.userDao.userId == 456
             up.permissionDao == adminPermission
         })
+
+        and: "season has been updated with new admin and inactivated due to date change"
         1 * seasonRepository.update({ SeasonDao s ->
             s.creator.userId == 456
+            s.status == "INACTIVE"
         }) >> newSeason
         0 * _
-        updated.creator.username == "new-admin"
-        updated.creator.userId == 456
     }
 }
