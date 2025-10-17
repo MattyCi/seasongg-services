@@ -42,9 +42,7 @@ public class SeasonService {
     private final GameMapper gameMapper;
     private final Validator validator;
     private final UserMapper userMapper;
-    // TODO: refactor this - both of these things should be in a service
-    private final PermissionRepository permissionRepository;
-    private final UserPermissionRepository userPermissionRepository;
+    private final PermissionService permissionService;
 
     @Transactional(readOnly = true)
     public SeasonDto getSeason(String id) {
@@ -68,22 +66,8 @@ public class SeasonService {
         if (season.getRounds() != null)
             throw new ClientException("Seasons cannot have rounds upon creation.");
         val persistedSeason = seasonRepository.save(seasonMapper.toSeasonDao(season));
-        insertAdminPermissions(persistedSeason.getSeasonId(), creator);
+        permissionService.insertSeasonAdminPermission(persistedSeason.getSeasonId(), userMapper.userDtoToUser(creator));
         return seasonMapper.toSeasonDto(persistedSeason);
-    }
-
-    private void insertAdminPermissions(Long seasonId, UserDto admin) {
-        val permission = PermissionDao.builder()
-                .permissionType(PermissionType.WRITE)
-                .resourceId(seasonId)
-                .resourceType(ResourceType.SEASON)
-                .build();
-        val userPermission = UserPermissionDao.builder()
-                .permissionDao(permission)
-                .userDao(userMapper.userDtoToUser(admin))
-                .build();
-        permissionRepository.save(permission);
-        userPermissionRepository.save(userPermission);
     }
 
     private void validateSeason(SeasonDto season) {
@@ -143,28 +127,9 @@ public class SeasonService {
         }
         log.info("Season {} is being updated with a new admin from {} to {}.", storedSeason.getSeasonId(),
                 storedSeason.getCreator().getUserId(), updatedSeason.getCreator().getUserId());
-        updateAdminPermissions(storedSeason.getCreator(), newAdmin, storedSeason.getSeasonId());
+        permissionService.swapSeasonAdmins(storedSeason.getSeasonId(),
+                userMapper.userDtoToUser(storedSeason.getCreator()), userMapper.userDtoToUser(newAdmin));
         storedSeason.setCreator(newAdmin);
-    }
-
-    private void updateAdminPermissions(UserDto oldAdmin, UserDto newAdmin, Long seasonId) {
-        val adminPermission = permissionRepository.findByResourceIdAndResourceTypeAndPermissionType(
-                seasonId, ResourceType.SEASON, PermissionType.WRITE);
-        if (adminPermission.isEmpty()) {
-            log.warn("No admin permission was found for season {}. Adding permission for new admin {}", seasonId,
-                    newAdmin.getUserId());
-            insertAdminPermissions(seasonId, newAdmin);
-        } else {
-            val oldUserPerm = userPermissionRepository.findByUserDaoAndPermissionDao(userMapper.userDtoToUser(oldAdmin),
-                    adminPermission.get());
-            oldUserPerm.ifPresentOrElse(userPermissionRepository::delete, () -> log.warn("No user permission existed " +
-                    "for season {}, permId {}", seasonId, adminPermission.get().getPermId()));
-            val newUserPerm = UserPermissionDao.builder()
-                    .permissionDao(adminPermission.get())
-                    .userDao(userMapper.userDtoToUser(newAdmin))
-                    .build();
-            userPermissionRepository.save(newUserPerm);
-        }
     }
 
     private void updateSeasonEndDate(SeasonDto updatedSeason, SeasonDto storedSeason) {
