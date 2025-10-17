@@ -131,4 +131,67 @@ class SeasonServiceSpec extends Specification {
         }) >> newSeason
         0 * _
     }
+
+    def "should throw if new season admin doesn't exist"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def oldSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(creator)
+                .build()
+        def newSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(new UserDao(userId: 404))
+                .build()
+        def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
+
+        when:
+        seasonService.updateSeason("999", newSeasonDto)
+
+        then:
+        1 * validator.validate(newSeasonDto) >> []
+        1 * seasonRepository.findById(999) >> Optional.of(oldSeason)
+        1 * userService.getUserById(404) >> { throw new NotFoundException("User not found!") }
+        0 * _
+        def e = thrown(NotFoundException)
+        e.message == "The given user for the season admin does not exist."
+    }
+
+    def "should re-activate season if season end date is extended past the current date"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def oldSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(creator)
+                .startDate(OffsetDateTime.parse("2000-01-01T00:00:00-00:00"))
+                .endDate(OffsetDateTime.parse("2020-01-01T00:00:00-00:00"))
+                .status("INACTIVE")
+                .name("Catan Tournament")
+                .build()
+        def newSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(creator)
+                .startDate(OffsetDateTime.parse("2000-01-01T00:00:00-00:00"))
+                .endDate(OffsetDateTime.parse("3000-01-01T00:00:00-00:00"))
+                .status("INACTIVE")
+                .name("Catan Tournament")
+                .build()
+        def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
+
+        when:
+        def updated = seasonService.updateSeason("999", newSeasonDto)
+
+        then:
+        1 * validator.validate(newSeasonDto) >> []
+        1 * seasonRepository.findById(999) >> Optional.of(oldSeason)
+
+        and: "season should be re-activated"
+        1 * seasonRepository.update({ SeasonDao s ->
+            s.status == "ACTIVE"
+        }) >> newSeason
+
+        and:
+        0 * _
+        updated.endDate == OffsetDateTime.parse("3000-01-01T00:00:00-00:00")
+    }
 }
