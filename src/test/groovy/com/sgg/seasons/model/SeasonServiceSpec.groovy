@@ -129,6 +129,31 @@ class SeasonServiceSpec extends Specification {
         updated.creator.userId == 456
     }
 
+    def "should throw if new season admin doesn't exist"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def oldSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(creator)
+                .build()
+        def newSeason = SeasonDao.builder()
+                .seasonId(999)
+                .creator(new UserDao(userId: 404))
+                .build()
+        def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
+
+        when:
+        seasonService.updateSeason("999", newSeasonDto)
+
+        then:
+        1 * validator.validate(newSeasonDto) >> []
+        1 * seasonRepository.findById(999) >> Optional.of(oldSeason)
+        1 * userService.getUserById(404) >> { throw new NotFoundException("User not found!") }
+        0 * _
+        def e = thrown(NotFoundException)
+        e.message == "The given user for the season admin does not exist."
+    }
+
     def "should re-activate season if season end date is extended past the current date"() {
         given:
         def creator = new UserDao(userId: 123, username: "matty")
