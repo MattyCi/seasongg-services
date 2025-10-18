@@ -7,23 +7,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-import java.util.Optional;
-
 @Slf4j
 @Singleton
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class DefaultPermissionService implements PermissionService {
     private PermissionRepository permissionRepository;
     private UserPermissionRepository userPermissionRepository;
-
-    public Optional<PermissionDao> findSeasonPermission(Long seasonId) {
-        return permissionRepository.findByResourceIdAndResourceTypeAndPermissionType(seasonId, ResourceType.SEASON,
-                PermissionType.WRITE);
-    }
-
-    public Optional<UserPermissionDao> findUserPermission(UserDao user, PermissionDao permission) {
-        return userPermissionRepository.findByUserDaoAndPermissionDao(user, permission);
-    }
 
     public void insertSeasonAdminPermission(Long resourceId, UserDao user) {
         val permission = PermissionDao.builder()
