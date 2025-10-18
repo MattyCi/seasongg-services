@@ -10,12 +10,7 @@ import com.sgg.users.UserDao
 import com.sgg.users.UserMapper
 import com.sgg.users.UserMapperImpl
 import com.sgg.users.UserService
-import com.sgg.users.authz.PermissionDao
-import com.sgg.users.authz.PermissionRepository
-import com.sgg.users.authz.PermissionType
-import com.sgg.users.authz.ResourceType
-import com.sgg.users.authz.UserPermissionDao
-import com.sgg.users.authz.UserPermissionRepository
+import com.sgg.users.authz.*
 import io.micronaut.security.utils.SecurityService
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
@@ -31,8 +26,7 @@ class SeasonServiceSpec extends Specification {
     SeasonMapper seasonMapper = new SeasonMapperImpl()
     Validator validator = Mock()
     UserMapper userMapper = new UserMapperImpl()
-    PermissionRepository permissionRepository = Mock()
-    UserPermissionRepository userPermissionRepository = Mock()
+    PermissionService permissionService = Mock()
 
     SeasonService seasonService = new SeasonService(
             seasonRepository,
@@ -43,8 +37,7 @@ class SeasonServiceSpec extends Specification {
             Mock(GameMapper),
             validator,
             userMapper,
-            permissionRepository,
-            userPermissionRepository
+            permissionService
     )
 
     def "should get season"() {
@@ -102,26 +95,20 @@ class SeasonServiceSpec extends Specification {
                 .name("Season")
                 .build()
         def newSeasonDto = seasonMapper.toSeasonDto(newSeason)
-        def adminPermission = Mock(PermissionDao)
-        def oldUserPerm = Mock(UserPermissionDao)
 
         when:
-        def updated = seasonService.updateSeason("999", newSeasonDto)
+        seasonService.updateSeason("999", newSeasonDto)
 
         then:
         1 * validator.validate(newSeasonDto) >> []
         1 * seasonRepository.findById(999) >> Optional.of(oldSeason)
         1 * userService.getUserById(456) >> userMapper.userToUserDto(newAdmin)
-        1 * permissionRepository.findByResourceIdAndResourceTypeAndPermissionType(
-                999, ResourceType.SEASON, PermissionType.WRITE
-        ) >> Optional.of(adminPermission)
-        1 * userPermissionRepository.findByUserDaoAndPermissionDao({ UserDao u ->
-            u.userId == 123
-        }, adminPermission) >> Optional.of(oldUserPerm)
-        1 * userPermissionRepository.delete(oldUserPerm)
-        1 * userPermissionRepository.save({ UserPermissionDao up ->
-            up.userDao.userId == 456
-            up.permissionDao == adminPermission
+        1 * permissionService.swapSeasonAdmins(999, { UserDao o ->
+            o.userId == 123
+            o.username == "old-admin"
+        }, { UserDao n ->
+            n.userId == 456
+            n.username == "new-admin"
         })
 
         and: "season has been updated with new admin and inactivated due to date change"
