@@ -4,6 +4,7 @@ import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
 import com.sgg.games.GameRepository;
+import com.sgg.games.GameService;
 import com.sgg.games.model.GameDto;
 import com.sgg.games.model.GameMapper;
 import com.sgg.seasons.model.SeasonDto;
@@ -36,12 +37,10 @@ public class SeasonService {
     private static final String ERR_SEASON_NOT_FOUND = "No season was found for the given ID.";
 
     private final SeasonRepository seasonRepository;
-    // TODO: refactor this - game repo should be encapsulated in a service
-    private final GameRepository gameRepository;
+    private final GameService gameService;
     private final SecurityService securityService;
     private final UserService userService;
     private final SeasonMapper seasonMapper;
-    private final GameMapper gameMapper;
     private final Validator validator;
     private final UserMapper userMapper;
     private final PermissionService permissionService;
@@ -62,7 +61,7 @@ public class SeasonService {
         initSeason(season, creator);
         validateSeason(season);
         season.setName(season.getName().trim());
-        maybePersistGame(season.getGame());
+        gameService.maybeCreateGame(season.getGame());
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
             throw new ClientException("A season with that name already exists.");
         if (season.getRounds() != null)
@@ -97,12 +96,6 @@ public class SeasonService {
         season.setCreator(creator);
         season.setStatus(SeasonStatus.ACTIVE);
         season.setStartDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
-    }
-
-    // TODO: we need to do some kind of validation here
-    private void maybePersistGame(GameDto game) {
-        if (gameRepository.findById(game.getGameId()).isEmpty())
-            gameRepository.save(gameMapper.toGameDao(game));
     }
 
     @Transactional

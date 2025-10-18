@@ -2,8 +2,7 @@ package com.sgg.seasons.model
 
 import com.sgg.common.exception.ClientException
 import com.sgg.common.exception.NotFoundException
-import com.sgg.games.GameRepository
-import com.sgg.games.model.GameMapper
+import com.sgg.games.GameService
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.SeasonService
 import com.sgg.users.UserDao
@@ -30,11 +29,10 @@ class SeasonServiceSpec extends Specification {
 
     SeasonService seasonService = new SeasonService(
             seasonRepository,
-            Mock(GameRepository),
+            Mock(GameService),
             Mock(SecurityService),
             userService,
             seasonMapper,
-            Mock(GameMapper),
             validator,
             userMapper,
             permissionService
