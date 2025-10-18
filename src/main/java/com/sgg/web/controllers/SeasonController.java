@@ -42,4 +42,12 @@ public class SeasonController {
         val result = seasonService.updateSeason(id, season);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
+
+    @Delete("/{id}")
+    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @SggSecurityRule(resourceType = SEASON, permissionType = WRITE, resourceIdName = "id")
+    public HttpResponse<Void> deleteSeason(@PathVariable String id) {
+        seasonService.deleteSeason(id);
+        return HttpResponse.noContent();
+    }
 }

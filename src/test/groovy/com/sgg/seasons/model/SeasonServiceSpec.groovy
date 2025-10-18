@@ -181,4 +181,57 @@ class SeasonServiceSpec extends Specification {
         0 * _
         updated.endDate == OffsetDateTime.parse("3000-01-01T00:00:00-00:00")
     }
+
+    def "should delete season"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def season = new SeasonDao(
+                seasonId: 999,
+                creator: creator
+        )
+
+        when:
+        seasonService.deleteSeason(season.seasonId.toString())
+
+        then:
+        1 * seasonRepository.findById(999) >> Optional.of(season)
+        1 * seasonRepository.delete(season)
+    }
+
+    def "should throw if season not found on season delete"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def season = new SeasonDao(
+                seasonId: 999,
+                creator: creator
+        )
+
+        when:
+        seasonService.deleteSeason(season.seasonId.toString())
+
+        then:
+        1 * seasonRepository.findById(999) >> Optional.empty()
+        def e = thrown(NotFoundException)
+        e.message == "No season was found for the given ID."
+    }
+
+    def "should throw if unexpected error occurs on season delete"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def season = new SeasonDao(
+                seasonId: 999,
+                creator: creator
+        )
+
+        when:
+        seasonService.deleteSeason(season.seasonId.toString())
+
+        then:
+        1 * seasonRepository.findById(999) >> Optional.of(season)
+        1 * seasonRepository.delete(season) >> {
+            throw new Exception("Unexpected!")
+        }
+        def e = thrown(Exception)
+        e.message == "An unexpected error occurred trying to delete your season, please try again."
+    }
 }

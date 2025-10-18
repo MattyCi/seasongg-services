@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class SeasonService {
     private static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to create a season.";
+    private static final String ERR_SEASON_NOT_FOUND = "No season was found for the given ID.";
+
     private final SeasonRepository seasonRepository;
     // TODO: refactor this - game repo should be encapsulated in a service
     private final GameRepository gameRepository;
@@ -48,7 +50,7 @@ public class SeasonService {
     public SeasonDto getSeason(String id) {
         val season = seasonRepository.findById(parseSeasonId(id));
         if (season.isEmpty()) {
-            throw new NotFoundException("No season was found for the given ID.");
+            throw new NotFoundException(ERR_SEASON_NOT_FOUND);
         } else {
             return seasonMapper.toSeasonDto(season.get());
         }
@@ -107,7 +109,7 @@ public class SeasonService {
     public SeasonDto updateSeason(String id, SeasonDto updatedSeason) {
         validateSeason(updatedSeason);
         val storedSeason = seasonRepository.findById(parseSeasonId(id)).map(seasonMapper::toSeasonDto)
-                .orElseThrow(() -> new NotFoundException("No season was found for the given ID."));
+                .orElseThrow(() -> new NotFoundException(ERR_SEASON_NOT_FOUND));
         if (!storedSeason.getCreator().getUserId().equals(updatedSeason.getCreator().getUserId())) {
             updateSeasonAdmin(updatedSeason, storedSeason);
         }
@@ -142,6 +144,20 @@ public class SeasonService {
             storedSeason.setStatus(SeasonStatus.ACTIVE);
         }
         storedSeason.setEndDate(updatedSeason.getEndDate());
+    }
+
+    @Transactional
+    public void deleteSeason(String id) throws SggException {
+        val season = seasonRepository.findById(parseSeasonId(id));
+        if (season.isEmpty()) {
+            throw new NotFoundException(ERR_SEASON_NOT_FOUND);
+        }
+        try {
+            seasonRepository.delete(season.get());
+        } catch (Exception e) {
+            log.error("Unexpected error occurred trying to delete season {}", id, e);
+            throw new SggException("An unexpected error occurred trying to delete your season, please try again.");
+        }
     }
 
     private Long parseSeasonId(String id) {
