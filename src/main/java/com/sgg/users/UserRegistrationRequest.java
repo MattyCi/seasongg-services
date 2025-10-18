@@ -13,6 +13,8 @@ public class UserRegistrationRequest {
     @NotBlank(message = "{registration.username.NotBlank}")
     @Pattern(regexp = "^[a-zA-Z0-9'-]*$", message = "{registration.username.Pattern}")
     String username;
+
+    // TODO: add validation for password
     String password;
     String passwordVerify;
 }

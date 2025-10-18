@@ -16,4 +16,10 @@ public class PermissionDto {
 	private ResourceType resourceType;
 	private PermissionType permissionType;
 	private Long resourceId;
+
+	public String formatPermission() {
+		return String.format("%s:%s",
+				this.getResourceType(),
+				this.getResourceId());
+	}
 }
