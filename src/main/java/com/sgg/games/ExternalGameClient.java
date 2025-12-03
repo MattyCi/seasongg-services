@@ -71,12 +71,12 @@ public final class ExternalGameClient {
                 .flatMap(resp -> Mono.fromCallable(() -> parseGetGameXml(resp))
                         .subscribeOn(Schedulers.boundedElastic())
                 )
-                .onErrorMap(e -> {
+                .onErrorResume(e -> {
                     if (e instanceof NotFoundException) {
-                        return e;
+                        return Mono.empty();
                     } else {
-                        log.error("Failed to retrieve or parse get game from BGG", e);
-                        return new SggException("Unexpected error occurred trying to find game from external service.");
+                        log.error("Failed to retrieve or parse game from BGG", e);
+                        return Mono.error(new SggException("Unexpected error occurred finding game from BGG."));
                     }
                 });
     }

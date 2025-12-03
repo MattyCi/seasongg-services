@@ -2,11 +2,13 @@ package com.sgg.games
 
 import com.sgg.common.exception.NotFoundException
 import com.sgg.common.exception.SggException
+import com.sgg.games.model.GameDto
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 import spock.lang.Specification
 
 class ExternalGameClientSpec extends Specification {
@@ -89,7 +91,13 @@ class ExternalGameClientSpec extends Specification {
 
     def "getGame returns game details when response is valid"() {
         given:
-        String validXmlResponse = """
+        def expectedGame = new GameDto(
+                gameId: 12345,
+                name: "Primary Name",
+                yearPublished: 2023,
+                thumbnail: "https://example.com/game.png"
+        )
+        def validXmlResponse = """
         <items>
             <item type="boardgame" id="12345">
                 <name type="primary" sortindex="1" value="Primary Name" />
@@ -103,25 +111,26 @@ class ExternalGameClientSpec extends Specification {
         httpClient.retrieve(_ as HttpRequest) >> Mono.just(validXmlResponse)
 
         when:
-        def result = externalGameClient.getGame(12345L).block()
+        def result = externalGameClient.getGame(12345L)
 
         then:
-        result.gameId == 12345L
-        result.name == "Primary Name"
-        result.yearPublished == "2023"
-        result.thumbnail == "https://example.com/game.png"
+        StepVerifier.create(result)
+                .expectNext(expectedGame)
+                .expectComplete()
+                .verify()
     }
 
     def "getGame throws NotFoundException when game is not found"() {
         given:
-        String emptyXmlResponse = "<items></items>"
+        def emptyXmlResponse = "<items></items>"
         httpClient.retrieve(_ as HttpRequest) >> Mono.just(emptyXmlResponse)
 
         when:
-        externalGameClient.getGame(99999L).block()
+        def result = externalGameClient.getGame(99999L)
 
         then:
-        thrown(NotFoundException)
+        StepVerifier.create(result)
+            .expectError(NotFoundException)
     }
 
     def "getGame handles invalid XML gracefully"() {
@@ -130,11 +139,14 @@ class ExternalGameClientSpec extends Specification {
         httpClient.retrieve(_ as HttpRequest) >> Mono.just(invalidXmlResponse)
 
         when:
-        externalGameClient.getGame(12345L).block()
+        def result = externalGameClient.getGame(12345L)
 
         then:
-        def e = thrown(SggException)
-        e.message == "Unexpected error occurred trying to find game from external service."
+        StepVerifier.create(result)
+            .expectErrorSatisfies { e ->
+                assert e instanceof SggException
+                assert e.getMessage() == "Unexpected error occurred trying to find game from external service."
+            }
     }
 
     def "getGame handles HTTP errors gracefully"() {
@@ -144,10 +156,13 @@ class ExternalGameClientSpec extends Specification {
         }
 
         when:
-        externalGameClient.getGame(12345L).block()
+        def result = externalGameClient.getGame(12345L)
 
         then:
-        def e = thrown(SggException)
-        e.getMessage() == "Unexpected error occurred trying to find game from external service."
+        StepVerifier.create(result)
+            .expectErrorSatisfies { e ->
+                assert e instanceof SggException
+                assert e.getMessage() == "Unexpected error occurred trying to find game from external service."
+            }
     }
 }
