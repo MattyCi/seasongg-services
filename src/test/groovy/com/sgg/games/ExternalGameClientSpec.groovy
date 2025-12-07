@@ -1,6 +1,6 @@
 package com.sgg.games
 
-import com.sgg.common.exception.NotFoundException
+
 import com.sgg.common.exception.SggException
 import com.sgg.games.model.GameDto
 import io.micronaut.http.HttpRequest
@@ -130,7 +130,31 @@ class ExternalGameClientSpec extends Specification {
 
         then:
         StepVerifier.create(result)
-            .expectError(NotFoundException)
+            .expectNextCount(0)
+            .verifyComplete()
+    }
+
+    def "getGame handles error XML gracefully"() {
+        given:
+        String invalidXmlResponse = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <items termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
+                <item>
+                    <error message='Invalid Item'/>
+                </item>
+            </items>
+        """
+        httpClient.retrieve(_ as HttpRequest) >> Mono.just(invalidXmlResponse)
+
+        when:
+        def result = externalGameClient.getGame(12345L)
+
+        then:
+        StepVerifier.create(result)
+                .expectErrorSatisfies { e ->
+                    assert e instanceof SggException
+                    assert e.getMessage() == "Unexpected error occurred finding game from BGG."
+                }.verify()
     }
 
     def "getGame handles invalid XML gracefully"() {
@@ -145,8 +169,8 @@ class ExternalGameClientSpec extends Specification {
         StepVerifier.create(result)
             .expectErrorSatisfies { e ->
                 assert e instanceof SggException
-                assert e.getMessage() == "Unexpected error occurred trying to find game from external service."
-            }
+                assert e.getMessage() == "Unexpected error occurred finding game from BGG."
+            }.verify()
     }
 
     def "getGame handles HTTP errors gracefully"() {
@@ -162,7 +186,7 @@ class ExternalGameClientSpec extends Specification {
         StepVerifier.create(result)
             .expectErrorSatisfies { e ->
                 assert e instanceof SggException
-                assert e.getMessage() == "Unexpected error occurred trying to find game from external service."
-            }
+                assert e.getMessage() == "Unexpected error occurred finding game from BGG."
+            }.verify()
     }
 }

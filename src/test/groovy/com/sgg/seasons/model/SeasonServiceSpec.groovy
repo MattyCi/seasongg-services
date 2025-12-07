@@ -2,8 +2,11 @@ package com.sgg.seasons.model
 
 import com.sgg.common.exception.ClientException
 import com.sgg.common.exception.NotFoundException
+import com.sgg.games.ExternalGameClient
 import com.sgg.games.GameRepository
 import com.sgg.games.GameService
+import com.sgg.games.model.GameDao
+import com.sgg.games.model.GameDto
 import com.sgg.games.model.GameMapper
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.SeasonService
@@ -12,6 +15,7 @@ import com.sgg.users.UserMapper
 import com.sgg.users.UserMapperImpl
 import com.sgg.users.UserService
 import com.sgg.users.authz.*
+import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.utils.SecurityService
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
@@ -21,19 +25,19 @@ import java.time.OffsetDateTime
 
 @MicronautTest(startApplication = false)
 class SeasonServiceSpec extends Specification {
-
     SeasonRepository seasonRepository = Mock()
     UserService userService = Mock()
+    SecurityService securityService = Mock()
     SeasonMapper seasonMapper = new SeasonMapperImpl()
     Validator validator = Mock()
     UserMapper userMapper = new UserMapperImpl()
     PermissionService permissionService = Mock()
-    GameService gameService = Mock(constructorArgs: [Mock(GameRepository), Mock(GameMapper)])
+    GameService gameService = Mock(constructorArgs: [Mock(GameRepository), Mock(GameMapper), Mock(ExternalGameClient)])
 
     SeasonService seasonService = new SeasonService(
             seasonRepository,
             gameService,
-            Mock(SecurityService),
+            securityService,
             userService,
             seasonMapper,
             validator,
@@ -73,6 +77,36 @@ class SeasonServiceSpec extends Specification {
         0 * _
         def e = thrown(ClientException)
         e.message == "Invalid seasonId provided."
+    }
+
+    def "should use game from game service in create season response"() {
+        given:
+        def creator = new UserDao(userId: 123, username: "matty")
+        def seasonDao = SeasonDao.builder()
+                .seasonId(123)
+                .name("season name")
+                .creator(creator)
+                .game(new GameDao(gameId: 123, name: "bad name"))
+                .build()
+        def seasonDto = seasonMapper.toSeasonDto(seasonDao)
+        def game = new GameDto(gameId: 123, name: "Catan") // correct name from game service
+
+        when:
+        def result = seasonService.createSeason(seasonDto)
+
+        then:
+        1 * securityService.getAuthentication() >> Optional.of(Mock(Authentication) {
+            getAttributes() >> [ userId: 123L ]
+        })
+        1 * validator.validate(seasonDto) >> []
+        1 * userService.getUserById(123) >> userMapper.userToUserDto(creator)
+        1 * seasonRepository.findByNameIgnoreCase(seasonDao.name) >> Optional.empty()
+        1 * gameService.maybeCreateGame(_) >> game
+        1 * seasonRepository.save({ SeasonDao s ->
+            assert s.game.name == game.name // good name from BGG persisted
+        }) >> seasonDao
+        1 * permissionService.insertSeasonAdminPermission(_, _)
+        0 * _
     }
 
     def "should update season admin and season end date"() {

@@ -61,11 +61,12 @@ public class SeasonService {
         initSeason(season, creator);
         validateSeason(season);
         season.setName(season.getName().trim());
-        gameService.maybeCreateGame(season.getGame());
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
             throw new ClientException("A season with that name already exists.");
         if (season.getRounds() != null)
             throw new ClientException("Seasons cannot have rounds upon creation.");
+        val game = gameService.maybeCreateGame(season.getGame());
+        season.setGame(game);
         val persistedSeason = seasonRepository.save(seasonMapper.toSeasonDao(season));
         permissionService.insertSeasonAdminPermission(persistedSeason.getSeasonId(), userMapper.userDtoToUser(creator));
         return seasonMapper.toSeasonDto(persistedSeason);

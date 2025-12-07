@@ -39,7 +39,7 @@ import static org.w3c.dom.Node.ELEMENT_NODE;
 
 @Singleton
 @Slf4j
-public final class ExternalGameClient {
+public class ExternalGameClient {
 
     @Client
     private final HttpClient httpClient;
@@ -83,6 +83,11 @@ public final class ExternalGameClient {
 
     private GameDto parseGetGameXml(String rawResponse) {
         Document doc = getXmlDocument(rawResponse);
+        var error = doc.getElementsByTagName("error");
+        if (error.getLength() > 0) {
+            log.error(error.item(0).getAttributes().getNamedItem("message").getNodeValue());
+            throw new SggException("Error returned from BGG in get game call.");
+        }
         NodeList items = doc.getElementsByTagName("item");
         if (items.getLength() == 0) {
             throw new NotFoundException("Game not found.");

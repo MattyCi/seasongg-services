@@ -1,11 +1,15 @@
 package com.sgg.games;
 
+import com.sgg.common.exception.ClientException;
 import com.sgg.games.model.GameDto;
 import com.sgg.games.model.GameMapper;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+
+import java.time.Duration;
 
 @Singleton
 @Slf4j
@@ -14,11 +18,21 @@ public class GameService {
 
     private GameRepository gameRepository;
     private GameMapper gameMapper;
+    private ExternalGameClient gameClient;
 
-    // TODO: add validation for game creation - use bgg api to validate?
     public GameDto maybeCreateGame(GameDto game) {
-        if (gameRepository.findById(game.getGameId()).isEmpty())
-            gameRepository.save(gameMapper.toGameDao(game));
-        return game;
+        val storedGame = gameRepository.findById(game.getGameId());
+        if (storedGame.isPresent()) {
+            return gameMapper.toGameDto(storedGame.get());
+        } else {
+            val externalGame = gameClient.getGame(game.getGameId())
+                    .blockOptional(Duration.ofSeconds(10)); // TODO: eventually make everything reactive
+            if (externalGame.isPresent()) {
+                gameRepository.save(gameMapper.toGameDao(externalGame.get()));
+                return externalGame.get();
+            } else {
+                throw new ClientException("Cannot create game that doesn't exist in external service.");
+            }
+        }
     }
 }
