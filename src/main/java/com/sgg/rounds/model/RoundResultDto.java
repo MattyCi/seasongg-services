@@ -1,4 +1,4 @@
-package com.sgg.rounds;
+package com.sgg.rounds.model;
 
 import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.Introspected;

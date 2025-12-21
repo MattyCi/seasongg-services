@@ -16,15 +16,8 @@ class RoundResultDtoSpec extends Specification {
     Validator validator
 
     def "should not have violations for a valid RoundResultDto"() {
-        given:
-        def roundResult = RoundResultDto.builder()
-                .place(1L)
-                .points(10.0)
-                .round(new RoundDto())
-                .build()
-
         when:
-        def violations = validator.validate(roundResult)
+        def violations = validator.validate(validResult().build())
 
         then:
         violations.isEmpty()

@@ -1,5 +1,6 @@
-package com.sgg.rounds;
+package com.sgg.rounds.model;
 
+import com.sgg.rounds.RoundResultDto;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.Introspected;
