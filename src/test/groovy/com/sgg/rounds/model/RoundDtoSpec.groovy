@@ -1,6 +1,5 @@
 package com.sgg.rounds.model
 
-import com.sgg.rounds.RoundDto
 import com.sgg.seasons.model.SeasonDto
 import com.sgg.users.model.UserDto
 import io.micronaut.test.extensions.spock.annotation.MicronautTest

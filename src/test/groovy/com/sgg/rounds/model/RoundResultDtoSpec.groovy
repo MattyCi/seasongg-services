@@ -1,7 +1,5 @@
 package com.sgg.rounds.model
 
-import com.sgg.rounds.RoundDto
-import com.sgg.rounds.RoundResultDto
 import com.sgg.users.model.UserDto
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
