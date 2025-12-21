@@ -41,4 +41,6 @@ public class SeasonDto {
     private GameDto game;
 
     // TODO: add season standings
+
+    // TODO: add configurable season scoring options ie. averaged, Best Of N, etc.
 }
