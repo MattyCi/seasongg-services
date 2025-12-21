@@ -49,7 +49,7 @@ class RoundResultDtoSpec extends Specification {
         "null user"   | validResult().user(null).build()   | "The round result must be associated with a user."
     }
 
-    def validResult() {
+    def static validResult() {
         return RoundResultDto.builder()
                 .place(1L)
                 .points(10.0)

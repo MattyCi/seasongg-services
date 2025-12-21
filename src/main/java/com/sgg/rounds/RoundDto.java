@@ -25,7 +25,7 @@ public class RoundDto {
     private OffsetDateTime roundDate;
 
     @NotNull(message = "{round.roundResults.NotNull}")
-    @Size(min = 2, message = "{round.roundResults.Size}")
+    @Size(min = 2, max = 30, message = "{round.roundResults.Size}")
     private List<RoundResultDto> roundResults;
 
     @NotNull(message = "{round.season.NotNull}")
