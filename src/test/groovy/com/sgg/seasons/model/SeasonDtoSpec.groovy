@@ -24,7 +24,7 @@ class SeasonDtoSpec extends Specification {
             .endDate(OffsetDateTime.now())
             .creator(new UserDto(1, "some-user", OffsetDateTime.now()))
             .status(SeasonStatus.ACTIVE)
-            .game(new GameDto(1, "some-game", []))
+            .game(new GameDto(gameId: 1L, name: "some-game"))
             .build()
 
         when:

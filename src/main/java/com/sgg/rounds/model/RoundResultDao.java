@@ -1,5 +1,6 @@
 package com.sgg.rounds.model;
 
+import com.sgg.users.UserDao;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +18,14 @@ public class RoundResultDao {
     @Column(name = "round_result_id")
     private Long roundResultsId;
 
+    private Long place;
 
     private Double points;
 
+    @ManyToOne
+    @JoinColumn(name="round_id", nullable = false)
+    private RoundDao round;
+
+    @ManyToOne
+    private UserDao user;
 }

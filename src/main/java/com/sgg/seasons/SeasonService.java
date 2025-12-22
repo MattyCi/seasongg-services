@@ -27,6 +27,7 @@ import lombok.val;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -63,8 +64,6 @@ public class SeasonService {
         season.setName(season.getName().trim());
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
             throw new ClientException("A season with that name already exists.");
-        if (season.getRounds() != null)
-            throw new ClientException("Seasons cannot have rounds upon creation.");
         val game = gameService.maybeCreateGame(season.getGame());
         season.setGame(game);
         val persistedSeason = seasonRepository.save(seasonMapper.toSeasonDao(season));
@@ -97,6 +96,7 @@ public class SeasonService {
         season.setCreator(creator);
         season.setStatus(SeasonStatus.ACTIVE);
         season.setStartDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
+        season.setRounds(List.of()); // rounds have to be added later
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package com.sgg.seasons.model;
 
 import com.sgg.games.model.GameDao;
+import com.sgg.rounds.model.RoundDao;
 import com.sgg.users.UserDao;
 import io.micronaut.data.annotation.DateCreated;
 import jakarta.persistence.*;
@@ -40,8 +41,8 @@ public class SeasonDao {
     @Column(length = 32, nullable = false)
     private String status;
 
-    // TODO: add rounds
-    private String rounds;
+    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoundDao> rounds;
 
     @ManyToOne
     @JoinColumn(name = "game_id", nullable = false)
