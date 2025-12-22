@@ -14,9 +14,8 @@ import com.sgg.users.UserDao
 import com.sgg.users.UserMapper
 import com.sgg.users.UserMapperImpl
 import com.sgg.users.UserService
-import com.sgg.users.authz.*
-import io.micronaut.security.authentication.Authentication
-import io.micronaut.security.utils.SecurityService
+import com.sgg.users.authz.PermissionService
+import com.sgg.users.model.UserDto
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
 import spock.lang.Specification
@@ -27,7 +26,6 @@ import java.time.OffsetDateTime
 class SeasonServiceSpec extends Specification {
     SeasonRepository seasonRepository = Mock()
     UserService userService = Mock()
-    SecurityService securityService = Mock()
     SeasonMapper seasonMapper = new SeasonMapperImpl()
     Validator validator = Mock()
     UserMapper userMapper = new UserMapperImpl()
@@ -37,7 +35,6 @@ class SeasonServiceSpec extends Specification {
     SeasonService seasonService = new SeasonService(
             seasonRepository,
             gameService,
-            securityService,
             userService,
             seasonMapper,
             validator,
@@ -95,11 +92,8 @@ class SeasonServiceSpec extends Specification {
         def result = seasonService.createSeason(seasonDto)
 
         then:
-        1 * securityService.getAuthentication() >> Optional.of(Mock(Authentication) {
-            getAttributes() >> [ userId: 123L ]
-        })
+        1 * userService.getCurrentUser() >> UserDto.builder().userId(123L).username("matty").build()
         1 * validator.validate(seasonDto) >> []
-        1 * userService.getUserById(123) >> userMapper.userToUserDto(creator)
         1 * seasonRepository.findByNameIgnoreCase(seasonDao.name) >> Optional.empty()
         1 * gameService.maybeCreateGame(_) >> game
         1 * seasonRepository.save({ SeasonDao s ->

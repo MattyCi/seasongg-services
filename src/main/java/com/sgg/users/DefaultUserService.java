@@ -2,8 +2,10 @@ package com.sgg.users;
 
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.ClientException;
+import com.sgg.common.exception.SggException;
 import com.sgg.users.model.UserDto;
 import com.sgg.users.security.PasswordEncoder;
+import io.micronaut.security.utils.SecurityService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
@@ -21,9 +23,11 @@ public class DefaultUserService implements UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    SecurityService securityService;
 
     private static final String USER_NOT_FOUND_ERROR = "The given user could not be found.";
     private static final String USERNAME_ALREADY_EXISTS_ERROR_TEXT = "The username provided is already in use.";
+    private static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to perform that action.";
 
     public UserDto registerUser(UserRegistrationRequest userRegistrationRequest)
             throws NotFoundException, ClientException {
@@ -86,4 +90,14 @@ public class DefaultUserService implements UserService {
         }
     }
 
+    public UserDto getCurrentUser() {
+        return securityService.getAuthentication()
+                .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
+                .getAttributes()
+                .entrySet().stream()
+                .filter((e) -> "userId".equals(e.getKey()))
+                .map((e) -> getUserById(Long.valueOf(e.getValue().toString())))
+                .findFirst()
+                .orElseThrow(() -> new SggException("Unexpected error occurred trying to retrieve current user."));
+    }
 }

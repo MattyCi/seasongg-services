@@ -13,4 +13,5 @@ public interface UserService {
 
     UserDto getUserByUsername(String username);
 
+    UserDto getCurrentUser();
 }

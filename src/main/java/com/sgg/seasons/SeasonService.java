@@ -3,10 +3,7 @@ package com.sgg.seasons;
 import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
-import com.sgg.games.GameRepository;
 import com.sgg.games.GameService;
-import com.sgg.games.model.GameDto;
-import com.sgg.games.model.GameMapper;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.seasons.model.SeasonMapper;
 import com.sgg.seasons.model.SeasonStatus;
@@ -14,7 +11,6 @@ import com.sgg.users.UserMapper;
 import com.sgg.users.UserService;
 import com.sgg.users.authz.*;
 import com.sgg.users.model.UserDto;
-import io.micronaut.security.utils.SecurityService;
 import io.micronaut.validation.validator.Validator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -34,12 +30,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class SeasonService {
-    private static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to create a season.";
     private static final String ERR_SEASON_NOT_FOUND = "No season was found for the given ID.";
 
     private final SeasonRepository seasonRepository;
     private final GameService gameService;
-    private final SecurityService securityService;
     private final UserService userService;
     private final SeasonMapper seasonMapper;
     private final Validator validator;
@@ -58,7 +52,7 @@ public class SeasonService {
 
     @Transactional
     public SeasonDto createSeason(SeasonDto season) {
-        val creator = getCreator();
+        val creator = userService.getCurrentUser();
         initSeason(season, creator);
         validateSeason(season);
         season.setName(season.getName().trim());
@@ -79,17 +73,6 @@ public class SeasonService {
                     .collect(Collectors.joining(" "))
             );
         }
-    }
-
-    private UserDto getCreator() {
-        return securityService.getAuthentication()
-                .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
-                .getAttributes()
-                .entrySet().stream()
-                .filter((e) -> "userId".equals(e.getKey()))
-                .map((e) -> userService.getUserById(Long.valueOf(e.getValue().toString())))
-                .findFirst()
-                .orElseThrow(() -> new SggException("Unexpected error occurred trying to retrieve current user."));
     }
 
     private void initSeason(SeasonDto season, UserDto creator) {
