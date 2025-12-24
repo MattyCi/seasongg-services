@@ -5,6 +5,7 @@ import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.Introspected;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class RoundDto {
     @NotNull(message = "{round.roundDate.NotNull}")
     private OffsetDateTime roundDate;
 
+    @Valid
     @NotNull(message = "{round.roundResults.NotNull}")
     @Size(min = 2, max = 30, message = "{round.roundResults.Size}")
     private List<RoundResultDto> roundResults;

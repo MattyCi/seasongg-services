@@ -5,10 +5,7 @@ import io.micronaut.core.annotation.Introspected;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -28,7 +25,4 @@ public class RoundResultDto {
 
     @NotNull(message = "{round.result.user.NotNull}")
     private UserDto user;
-
-    @NotNull(message = "{round.result.round.NotNull}")
-    private RoundDto round;
 }

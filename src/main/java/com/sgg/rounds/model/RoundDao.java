@@ -37,4 +37,9 @@ public class RoundDao {
     @ManyToOne
     @JoinColumn(nullable = false)
     private UserDao creator;
+
+    public void addRoundResult(RoundResultDao roundResult) {
+        getRoundResults().add(roundResult);
+        roundResult.setRound(this);
+    }
 }

@@ -36,7 +36,6 @@ class RoundResultDtoSpec extends Specification {
         "zero place"  | validResult().place(0L).build()    | "Place cannot be lower than 1."
         "21 place"    | validResult().place(21L).build()   | "Maximum place is 20."
         "null points" | validResult().points(null).build() | "Points must be provided for the round result."
-        "null round"  | validResult().round(null).build()  | "The round result must be associated with a round."
         "null user"   | validResult().user(null).build()   | "The round result must be associated with a user."
     }
 
@@ -45,6 +44,5 @@ class RoundResultDtoSpec extends Specification {
                 .place(1L)
                 .points(10.0)
                 .user(new UserDto())
-                .round(new RoundDto())
     }
 }
