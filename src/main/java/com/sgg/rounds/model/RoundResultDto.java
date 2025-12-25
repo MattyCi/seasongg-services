@@ -18,7 +18,7 @@ public class RoundResultDto {
     @NotNull(message = "{round.result.place.NotNull}")
     @Min(value = 1, message = "{round.result.place.Min}")
     @Max(value = 20, message = "{round.result.place.Max}")
-    private Long place;
+    private Integer place;
 
     @NotNull(message = "{round.result.points.NotNull}")
     private Double points;

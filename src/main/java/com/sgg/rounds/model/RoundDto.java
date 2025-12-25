@@ -19,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Introspected
+@ValidRound
 public class RoundDto {
     Long roundId;
 
@@ -26,7 +27,6 @@ public class RoundDto {
     private OffsetDateTime roundDate;
 
     @Valid
-    @NotNull(message = "{round.roundResults.NotNull}")
     @Size(min = 2, max = 30, message = "{round.roundResults.Size}")
     private List<RoundResultDto> roundResults;
 

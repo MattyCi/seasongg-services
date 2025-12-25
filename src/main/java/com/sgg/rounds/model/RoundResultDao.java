@@ -18,7 +18,7 @@ public class RoundResultDao {
     @Column(name = "round_result_id")
     private Long roundResultsId;
 
-    private Long place;
+    private Integer place;
 
     private Double points;
 

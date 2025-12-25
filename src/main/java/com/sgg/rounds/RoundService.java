@@ -47,6 +47,9 @@ public class RoundService {
     @Transactional
     public RoundDto createRound(String seasonId, RoundDto round) {
         // TODO: calculate points for round results based on place
+        // TODO: check for multiple players in a round result (ie. a player should only be in a round once)
+        // TODO: add test to make sure massive number of RR can't be added
+        // TODO: validate places (ie. 1st, 2nd, 4th ... should throw exception since 3rd was skipped ? or allow for tie?
         val season = seasonService.getSeason(seasonId); // will throw if season doesn't exist
         if (season.getStatus() != SeasonStatus.ACTIVE) {
             throw new ClientException("Rounds cannot be created because the season has ended.");
@@ -71,6 +74,7 @@ public class RoundService {
         }
     }
 
+    // TODO: you don't need to iterate twice ... call this from the below method
     private void validatePlayers(RoundDto round) {
         round.getRoundResults().forEach(roundResult -> {
             UserDto player;
