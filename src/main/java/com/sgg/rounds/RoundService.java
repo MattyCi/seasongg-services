@@ -2,12 +2,11 @@ package com.sgg.rounds;
 
 import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.NotFoundException;
+import com.sgg.rounds.model.RoundDao;
 import com.sgg.rounds.model.RoundDto;
 import com.sgg.rounds.model.RoundResultDao;
-import com.sgg.rounds.model.RoundResultDto;
 import com.sgg.seasons.SeasonService;
 import com.sgg.seasons.model.SeasonStatus;
-import com.sgg.users.UserDao;
 import com.sgg.users.UserService;
 import com.sgg.users.model.UserDto;
 import io.micronaut.transaction.annotation.Transactional;
@@ -19,6 +18,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+import javax.annotation.Nonnull;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -44,21 +46,17 @@ public class RoundService {
 
     @Transactional
     public RoundDto createRound(String seasonId, RoundDto round) {
-        if (round.getSeason().getStatus() != SeasonStatus.ACTIVE) {
+        // TODO: calculate points for round results based on place
+        val season = seasonService.getSeason(seasonId); // will throw if season doesn't exist
+        if (season.getStatus() != SeasonStatus.ACTIVE) {
             throw new ClientException("Rounds cannot be created because the season has ended.");
         }
-        round.setSeason(seasonService.getSeason(seasonId));
+        round.setRoundDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
+        round.setSeason(season);
         round.setCreator(userService.getCurrentUser());
         validateRound(round);
-        // TODO: calculate points for round results based on place
         validatePlayers(round);
-        val roundDao = roundMapper.toRoundDao(round);
-        roundDao.setRoundResults(new ArrayList<>());
-        for(RoundResultDto r : round.getRoundResults()) {
-            val rrDao = roundMapper.toRoundResultDao(r);
-            rrDao.setRound(roundDao);
-            roundDao.addRoundResult(rrDao);
-        }
+        val roundDao = associateResultsToRoundDao(round);
         val saved = roundRepository.save(roundDao);
         return roundMapper.toRoundDto(saved);
     }
@@ -84,9 +82,24 @@ public class RoundService {
                 log.error(msg);
                 throw new ClientException(msg);
             }
-            log.info("adding season {} round result for player {} who came in place {}",
-                    round.getSeason().getName(), player.getUsername(), roundResult.getPlace());
             roundResult.setUser(player);
         });
+    }
+
+    @Nonnull
+    private RoundDao associateResultsToRoundDao(RoundDto round) {
+        val roundDao = roundMapper.toRoundDao(round);
+        roundDao.setRoundResults(new ArrayList<>());
+        round.getRoundResults().stream()
+                .map(roundMapper::toRoundResultDao)
+                .peek(rr -> rr.setRound(roundDao))
+                .peek(rr -> logRoundResult(roundDao.getSeason().getName(), rr))
+                .forEach(roundDao::addRoundResult);
+        return roundDao;
+    }
+
+    private static void logRoundResult(String seasonName, RoundResultDao roundResult) {
+        log.info("adding season {} round result for player {} who came in place {}",
+                seasonName, roundResult.getUser().getUsername(), roundResult.getPlace());
     }
 }
