@@ -33,16 +33,14 @@ class RoundResultDtoSpec extends Specification {
         where:
         desc          | roundResult                        | msg
         "null place"  | validResult().place(null).build()  | "The place must be provided for all round results."
-        "zero place"  | validResult().place(0L).build()    | "Place cannot be lower than 1."
-        "21 place"    | validResult().place(21L).build()   | "Maximum place is 20."
-        "null points" | validResult().points(null).build() | "Points must be provided for the round result."
+        "zero place"  | validResult().place(0).build()    | "Place cannot be lower than 1."
+        "21 place"    | validResult().place(21).build()   | "Maximum place is 20."
         "null user"   | validResult().user(null).build()   | "The round result must be associated with a user."
     }
 
     def static validResult() {
         return RoundResultDto.builder()
-                .place(1L)
-                .points(10.0)
+                .place(1)
                 .user(new UserDto())
     }
 }

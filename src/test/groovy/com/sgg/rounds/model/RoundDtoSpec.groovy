@@ -16,12 +16,17 @@ class RoundDtoSpec extends Specification {
     @Inject
     Validator validator
 
-    def "should not have violations for a valid round"() {
+    def "should not have violations for #desc"() {
         when:
-        def violations = validator.validate(validResult().build())
+        def violations = validator.validate(round)
 
         then:
         violations.isEmpty()
+
+        where:
+        desc                    | round
+        "valid round"           | validResult().build()
+        "valid round with ties" | validResultWithTies().build()
     }
 
     @Unroll
@@ -41,14 +46,44 @@ class RoundDtoSpec extends Specification {
         "too many roundResults" | tooManyRoundResult()                      | "Round results must be between 2 and 31."
         "null season"           | validResult().season(null).build()        | "The round must be associated with a season."
         "null creator"          | validResult().creator(null).build()       | "The round must be associated with a user."
+        "missing place"         | roundResultsWithMissingPlace()            | "There are missing places in the round results. Double-check the order of the places and try again."
+        "duplicate players"     | roundResultsWithDuplicatePlayers()        | "A user cannot have multiple results in the same round."
     }
 
-    def validResult() {
+    def static validResult() {
         return RoundDto.builder()
                 .roundDate(OffsetDateTime.parse("3000-04-17T22:00:00-05:00"))
                 .roundResults([
-                        RoundResultDtoSpec.validResult().build(),
-                        RoundResultDtoSpec.validResult().build()
+                        RoundResultDto.builder()
+                        .user(new UserDto(userId: 1, username: "player1"))
+                        .place(1).build(),
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 2, username: "player2"))
+                                .place(2).build(),
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 3, username: "player3"))
+                                .place(3).build(),
+                ])
+                .season(new SeasonDto())
+                .creator(new UserDto())
+    }
+
+    def validResultWithTies() {
+        return RoundDto.builder()
+                .roundDate(OffsetDateTime.parse("3000-04-17T22:00:00-05:00"))
+                .roundResults([
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 1, username: "player1"))
+                                .place(1).build(),
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 2, username: "player2"))
+                                .place(2).build(),
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 3, username: "player3"))
+                                .place(2).build(),
+                        RoundResultDto.builder()
+                                .user(new UserDto(userId: 4, username: "player4"))
+                                .place(3).build(),
                 ])
                 .season(new SeasonDto())
                 .creator(new UserDto())
@@ -62,12 +97,34 @@ class RoundDtoSpec extends Specification {
         builder.build()
     }
 
-    def tooManyRoundResult() {
+    def static tooManyRoundResult() {
         def builder = validResult()
         def roundResults = []
         for (i in 0..< 31) {
-            roundResults.add(RoundResultDtoSpec.validResult().build())
+            roundResults.add(RoundResultDtoSpec
+                    .validResult()
+                    .user(new UserDto(userId: i, username: "player${i}"))
+                    .build())
         }
         builder.roundResults(roundResults).build()
+    }
+
+    def roundResultsWithMissingPlace() {
+        def builder = validResult()
+        builder.roundResults([
+                RoundResultDtoSpec.validResult().user(new UserDto(userId: 1)).place(1).build(),
+                RoundResultDtoSpec.validResult().user(new UserDto(userId: 2)).place(3).build()
+        ])
+        builder.build()
+    }
+
+    def roundResultsWithDuplicatePlayers() {
+        def builder = validResult()
+        builder.roundResults([
+                RoundResultDtoSpec.validResult().user(new UserDto(userId: 1)).build(),
+                RoundResultDtoSpec.validResult().user(new UserDto(userId: 1)).build(),
+                RoundResultDtoSpec.validResult().user(new UserDto(userId: 2)).build()
+        ])
+        builder.build()
     }
 }

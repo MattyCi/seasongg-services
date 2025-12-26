@@ -5,6 +5,7 @@ import com.sgg.common.exception.NotFoundException;
 import com.sgg.rounds.model.RoundDao;
 import com.sgg.rounds.model.RoundDto;
 import com.sgg.rounds.model.RoundResultDao;
+import com.sgg.rounds.model.RoundResultDto;
 import com.sgg.seasons.SeasonService;
 import com.sgg.seasons.model.SeasonStatus;
 import com.sgg.users.UserService;
@@ -18,7 +19,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-import javax.annotation.Nonnull;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -47,9 +47,6 @@ public class RoundService {
     @Transactional
     public RoundDto createRound(String seasonId, RoundDto round) {
         // TODO: calculate points for round results based on place
-        // TODO: check for multiple players in a round result (ie. a player should only be in a round once)
-        // TODO: add test to make sure massive number of RR can't be added
-        // TODO: validate places (ie. 1st, 2nd, 4th ... should throw exception since 3rd was skipped ? or allow for tie?
         val season = seasonService.getSeason(seasonId); // will throw if season doesn't exist
         if (season.getStatus() != SeasonStatus.ACTIVE) {
             throw new ClientException("Rounds cannot be created because the season has ended.");
@@ -74,7 +71,6 @@ public class RoundService {
         }
     }
 
-    // TODO: you don't need to iterate twice ... call this from the below method
     private void validatePlayers(RoundDto round) {
         round.getRoundResults().forEach(roundResult -> {
             UserDto player;
@@ -90,16 +86,35 @@ public class RoundService {
         });
     }
 
-    @Nonnull
     private RoundDao associateResultsToRoundDao(RoundDto round) {
         val roundDao = roundMapper.toRoundDao(round);
         roundDao.setRoundResults(new ArrayList<>());
         round.getRoundResults().stream()
+                .peek(this::calculatePoints)
                 .map(roundMapper::toRoundResultDao)
                 .peek(rr -> rr.setRound(roundDao))
                 .peek(rr -> logRoundResult(roundDao.getSeason().getName(), rr))
                 .forEach(roundDao::addRoundResult);
         return roundDao;
+    }
+
+    private void calculatePoints(RoundResultDto result) {
+        // TODO: for now, basic scoring algorithm. in future multiple possible scoring systems allowed
+        double points;
+        int place = result.getPlace();
+        points = switch (place) {
+            case 1 -> 10;
+            case 2 -> 9;
+            case 3 -> 8;
+            case 4 -> 7;
+            case 5 -> 6;
+            case 6 -> 5;
+            case 7 -> 4;
+            case 8 -> 3;
+            case 9 -> 2;
+            default -> 1;
+        };
+        result.setPoints(points);
     }
 
     private static void logRoundResult(String seasonName, RoundResultDao roundResult) {

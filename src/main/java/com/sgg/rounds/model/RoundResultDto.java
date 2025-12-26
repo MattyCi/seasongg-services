@@ -20,7 +20,6 @@ public class RoundResultDto {
     @Max(value = 20, message = "{round.result.place.Max}")
     private Integer place;
 
-    @NotNull(message = "{round.result.points.NotNull}")
     private Double points;
 
     @NotNull(message = "{round.result.user.NotNull}")

@@ -1,5 +1,6 @@
 package com.sgg.rounds.model;
 
+import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.core.annotation.Introspected;
 import io.micronaut.core.annotation.NonNull;
@@ -7,6 +8,7 @@ import io.micronaut.validation.validator.constraints.ConstraintValidator;
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 import java.util.List;
 
@@ -15,7 +17,6 @@ import java.util.List;
 @Introspected
 public class RoundValidator implements ConstraintValidator<ValidRound, RoundDto> {
 
-
     @Override
     public boolean isValid(RoundDto round, @NonNull AnnotationValue<ValidRound> annotationMetadata,
                            @NonNull ConstraintValidatorContext context) {
@@ -23,26 +24,40 @@ public class RoundValidator implements ConstraintValidator<ValidRound, RoundDto>
             context.messageTemplate("{round.roundResults.NotNull}");
             return false;
         }
-        return areRoundResultsInOrder(round.getRoundResults(), context);
+        if (duplicatePlayersInRoundResults(round.getRoundResults())) {
+            context.messageTemplate("{round.result.user.Duplicate}");
+            return false;
+        }
+        List<Integer> places = round.getRoundResults().stream().map(RoundResultDto::getPlace).toList();
+        if (placesMissing(determineLastPlace(places), places)) {
+            context.messageTemplate("{round.result.place.Ordering}");
+            return false;
+        } else {
+            return true;
+        }
     }
 
-    private boolean areRoundResultsInOrder(List<RoundResultDto> results, ConstraintValidatorContext context) {
-        // 1) figure out what was last place, so you know how many places to count down from
+    private static boolean duplicatePlayersInRoundResults(List<RoundResultDto> results) {
+        val userIds = results.stream().map(RoundResultDto::getUser).map(UserDto::getUserId).toList();
+        return userIds.stream().distinct().count() != userIds.size();
+    }
+
+    private static Integer determineLastPlace(List<Integer> places) {
         Integer lastPlace = 0;
-        List<Integer> places = results.stream().map(RoundResultDto::getPlace).toList();
         for (Integer place : places) {
             if (place > lastPlace) {
                 lastPlace = place;
             }
         }
+        return lastPlace;
+    }
 
-        // 2) counting down from last place, check to make sure that no places were "skipped" or missing
+    private static boolean placesMissing(Integer lastPlace, List<Integer> places) {
         for (int i = lastPlace; i > 0; i--) {
             if (!places.contains(i)) {
-                context.messageTemplate("{round.result.place.Ordering}");
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 }
