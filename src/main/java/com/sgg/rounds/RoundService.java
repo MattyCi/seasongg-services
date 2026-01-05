@@ -46,8 +46,8 @@ public class RoundService {
 
     @Transactional
     public RoundDto createRound(String seasonId, RoundDto round) {
-        // TODO: calculate points for round results based on place
-        val season = seasonService.getSeason(seasonId); // will throw if season doesn't exist
+        // TODO: recalculate season standings upon round creation
+        val season = seasonService.getSeason(seasonId);
         if (season.getStatus() != SeasonStatus.ACTIVE) {
             throw new ClientException("Rounds cannot be created because the season has ended.");
         }
@@ -120,5 +120,14 @@ public class RoundService {
     private static void logRoundResult(String seasonName, RoundResultDao roundResult) {
         log.info("adding season {} round result for player {} who came in place {}",
                 seasonName, roundResult.getUser().getUsername(), roundResult.getPlace());
+    }
+
+    @Transactional
+    public void deleteRound(String seasonId, String roundId) {
+        // TODO: recalculate season standings after round deletion
+        // TODO: if any users no longer in season, remove their season permissions
+        seasonService.removeRound(seasonId, roundId);
+        log.info("user {} deleted round with id {} for season {}",
+                userService.getCurrentUser().getUsername(), roundId, seasonId);
     }
 }

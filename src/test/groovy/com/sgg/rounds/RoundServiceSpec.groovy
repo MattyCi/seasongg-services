@@ -193,4 +193,14 @@ class RoundServiceSpec extends Specification {
         def e = thrown(ClientException)
         e.message == "Failed to create round because the player non-existent in place 1 does not exist."
     }
+
+    def "should use season service to remove round"() {
+        when:
+        roundService.deleteRound("123", "456")
+
+        then:
+        1 * seasonService.removeRound("123", "456")
+        1 * userService.getCurrentUser() >> new UserDto(username: "test")
+        0 * _
+    }
 }

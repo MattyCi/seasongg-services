@@ -68,4 +68,12 @@ public class SeasonController {
         val result = roundService.createRound(id, round);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
+
+    @Delete("/{id}/rounds/{roundId}")
+    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @SggSecurityRule(resourceType = SEASON, permissionType = WRITE, resourceIdName = "id")
+    public HttpResponse<RoundDto> deleteRound(@PathVariable String id, @PathVariable String roundId) {
+        roundService.deleteRound(id, roundId);
+        return HttpResponse.status(HttpStatus.OK);
+    }
 }

@@ -2,12 +2,14 @@ package com.sgg.seasons.model
 
 import com.sgg.common.exception.ClientException
 import com.sgg.common.exception.NotFoundException
+import com.sgg.common.exception.SggException
 import com.sgg.games.ExternalGameClient
 import com.sgg.games.GameRepository
 import com.sgg.games.GameService
 import com.sgg.games.model.GameDao
 import com.sgg.games.model.GameDto
 import com.sgg.games.model.GameMapper
+import com.sgg.rounds.model.RoundDao
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.SeasonService
 import com.sgg.users.UserDao
@@ -262,5 +264,76 @@ class SeasonServiceSpec extends Specification {
         }
         def e = thrown(Exception)
         e.message == "An unexpected error occurred trying to delete your season, please try again."
+    }
+
+    def "should delete round"() {
+        given:
+        def season = SeasonDao.builder()
+                .seasonId(123)
+                .build()
+        def rounds = [
+                RoundDao.builder().roundId(123).season(season).build(),
+                RoundDao.builder().roundId(456).season(season).build()
+        ]
+        season.rounds = rounds
+
+        when:
+        seasonService.removeRound("123", "456")
+
+        then:
+        1 * seasonRepository.findById(123L) >> Optional.of(season)
+        1 * seasonRepository.update({ SeasonDao s ->
+            assert s.rounds.size() == 1
+            assert s.rounds[0].getRoundId() == 123
+        })
+        0 * _
+    }
+
+    def "should not delete round if season doesn't exist"() {
+        when:
+        seasonService.removeRound("404", "404")
+
+        then:
+        1 * seasonService.getSeason("404") >> Optional.empty()
+        0 * _
+        def e = thrown(NotFoundException)
+        e.message == "No season was found for the given ID."
+    }
+
+    def "should not delete round if round not in season"() {
+        given:
+        def season = SeasonDao.builder()
+                .seasonId(1)
+                .build()
+        def rounds = [ RoundDao.builder().roundId(123).season(season).build() ]
+        season.rounds = rounds
+
+        when:
+        seasonService.removeRound("1", "404")
+
+        then:
+        1 * seasonRepository.findById(1L) >> Optional.of(season)
+        0 * _
+        def e = thrown(NotFoundException)
+        e.message == "The round does not exist for the given season."
+    }
+
+    def "should handle unexpected exception for delete round"() {
+        given:
+        def season = SeasonDao.builder()
+                .seasonId(1)
+                .build()
+        def rounds = [ RoundDao.builder().roundId(123).season(season).build() ]
+        season.rounds = rounds
+
+        when:
+        seasonService.removeRound("1", "123")
+
+        then:
+        1 * seasonRepository.findById(1L) >> Optional.of(season)
+        1 * seasonRepository.update(_) >> { throw new Exception() }
+        0 * _
+        def e = thrown(SggException)
+        e.message == "An unexpected error occurred trying to remove round, please try again."
     }
 }

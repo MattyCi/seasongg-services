@@ -137,6 +137,27 @@ public class SeasonService {
         }
     }
 
+    @Transactional
+    public void removeRound(String seasonId, String roundId) throws SggException {
+        val season = seasonRepository.findById(parseSeasonId(seasonId));
+        if (season.isEmpty()) {
+            throw new NotFoundException(ERR_SEASON_NOT_FOUND);
+        }
+        val seasonRound = season.get().getRounds().stream()
+                .filter(r -> r.getRoundId().toString().equals(roundId))
+                .findFirst();
+        if (seasonRound.isEmpty()) {
+            throw new NotFoundException("The round does not exist for the given season.");
+        }
+        try {
+            season.get().getRounds().remove(seasonRound.get());
+            seasonRepository.update(season.get());
+        } catch (Exception e) {
+            log.error("Unexpected error occurred trying to remove round {} from season {}", roundId, seasonId, e);
+            throw new SggException("An unexpected error occurred trying to remove round, please try again.");
+        }
+    }
+
     private Long parseSeasonId(String id) {
         try {
             return Long.parseLong(id);
