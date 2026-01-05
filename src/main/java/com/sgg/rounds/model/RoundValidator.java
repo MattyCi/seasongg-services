@@ -29,7 +29,7 @@ public class RoundValidator implements ConstraintValidator<ValidRound, RoundDto>
             return false;
         }
         List<Integer> places = round.getRoundResults().stream().map(RoundResultDto::getPlace).toList();
-        if (placesMissing(determineLastPlace(places), places)) {
+        if (placesMissing(places)) {
             context.messageTemplate("{round.result.place.Ordering}");
             return false;
         } else {
@@ -42,6 +42,15 @@ public class RoundValidator implements ConstraintValidator<ValidRound, RoundDto>
         return userIds.stream().distinct().count() != userIds.size();
     }
 
+    private static boolean placesMissing(List<Integer> places) {
+        for (int i = determineLastPlace(places); i > 0; i--) {
+            if (!places.contains(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static Integer determineLastPlace(List<Integer> places) {
         Integer lastPlace = 0;
         for (Integer place : places) {
@@ -50,14 +59,5 @@ public class RoundValidator implements ConstraintValidator<ValidRound, RoundDto>
             }
         }
         return lastPlace;
-    }
-
-    private static boolean placesMissing(Integer lastPlace, List<Integer> places) {
-        for (int i = lastPlace; i > 0; i--) {
-            if (!places.contains(i)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
