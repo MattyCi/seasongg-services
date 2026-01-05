@@ -1,6 +1,7 @@
 package com.sgg.seasons.model;
 
 import com.sgg.games.model.GameDto;
+import com.sgg.rounds.model.RoundDto;
 import com.sgg.users.model.UserDto;
 import io.micronaut.core.annotation.Introspected;
 import jakarta.validation.Valid;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -33,12 +35,13 @@ public class SeasonDto {
     @NotNull(message = "{season.status.NotNull}")
     private SeasonStatus status;
 
-    // TODO: add rounds
-    private String rounds;
+    private List<RoundDto> rounds;
 
     @NotNull(message = "{season.game.NotNull}")
     @Valid
     private GameDto game;
 
     // TODO: add season standings
+
+    // TODO: add configurable season scoring options ie. averaged, Best Of N, etc.
 }

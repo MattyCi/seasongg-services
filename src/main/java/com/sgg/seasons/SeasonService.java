@@ -3,10 +3,7 @@ package com.sgg.seasons;
 import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
-import com.sgg.games.GameRepository;
 import com.sgg.games.GameService;
-import com.sgg.games.model.GameDto;
-import com.sgg.games.model.GameMapper;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.seasons.model.SeasonMapper;
 import com.sgg.seasons.model.SeasonStatus;
@@ -14,7 +11,6 @@ import com.sgg.users.UserMapper;
 import com.sgg.users.UserService;
 import com.sgg.users.authz.*;
 import com.sgg.users.model.UserDto;
-import io.micronaut.security.utils.SecurityService;
 import io.micronaut.validation.validator.Validator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -27,18 +23,17 @@ import lombok.val;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
 @Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class SeasonService {
-    private static final String ERR_MUST_BE_AUTHENTICATED = "You must be logged in to create a season.";
     private static final String ERR_SEASON_NOT_FOUND = "No season was found for the given ID.";
 
     private final SeasonRepository seasonRepository;
     private final GameService gameService;
-    private final SecurityService securityService;
     private final UserService userService;
     private final SeasonMapper seasonMapper;
     private final Validator validator;
@@ -57,14 +52,12 @@ public class SeasonService {
 
     @Transactional
     public SeasonDto createSeason(SeasonDto season) {
-        val creator = getCreator();
+        val creator = userService.getCurrentUser();
         initSeason(season, creator);
         validateSeason(season);
         season.setName(season.getName().trim());
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
             throw new ClientException("A season with that name already exists.");
-        if (season.getRounds() != null)
-            throw new ClientException("Seasons cannot have rounds upon creation.");
         val game = gameService.maybeCreateGame(season.getGame());
         season.setGame(game);
         val persistedSeason = seasonRepository.save(seasonMapper.toSeasonDao(season));
@@ -82,21 +75,11 @@ public class SeasonService {
         }
     }
 
-    private UserDto getCreator() {
-        return securityService.getAuthentication()
-                .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
-                .getAttributes()
-                .entrySet().stream()
-                .filter((e) -> "userId".equals(e.getKey()))
-                .map((e) -> userService.getUserById(Long.valueOf(e.getValue().toString())))
-                .findFirst()
-                .orElseThrow(() -> new SggException("Unexpected error occurred trying to retrieve current user."));
-    }
-
     private void initSeason(SeasonDto season, UserDto creator) {
         season.setCreator(creator);
         season.setStatus(SeasonStatus.ACTIVE);
         season.setStartDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
+        season.setRounds(List.of()); // rounds have to be added later
     }
 
     @Transactional
@@ -151,6 +134,27 @@ public class SeasonService {
         } catch (Exception e) {
             log.error("Unexpected error occurred trying to delete season {}", id, e);
             throw new SggException("An unexpected error occurred trying to delete your season, please try again.");
+        }
+    }
+
+    @Transactional
+    public void removeRound(String seasonId, String roundId) throws SggException {
+        val season = seasonRepository.findById(parseSeasonId(seasonId));
+        if (season.isEmpty()) {
+            throw new NotFoundException(ERR_SEASON_NOT_FOUND);
+        }
+        val seasonRound = season.get().getRounds().stream()
+                .filter(r -> r.getRoundId().toString().equals(roundId))
+                .findFirst();
+        if (seasonRound.isEmpty()) {
+            throw new NotFoundException("The round does not exist for the given season.");
+        }
+        try {
+            season.get().getRounds().remove(seasonRound.get());
+            seasonRepository.update(season.get());
+        } catch (Exception e) {
+            log.error("Unexpected error occurred trying to remove round {} from season {}", roundId, seasonId, e);
+            throw new SggException("An unexpected error occurred trying to remove round, please try again.");
         }
     }
 
