@@ -6,7 +6,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "user_permissions", uniqueConstraints = @UniqueConstraint(columnNames = {"USER_ID", "PERM_ID"}))
+@Table(name = "user_permissions", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "perm_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,15 +17,15 @@ public
 class UserPermissionDao {
 
 	@Id
-	@Column(name = "USER_PERM_ID")
+	@Column(name = "user_perm_id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int userPermId;
 
 	@ManyToOne
-	@JoinColumn(name = "USER_ID")
+	@JoinColumn(name = "user_id")
 	private UserDao userDao;
 
 	@ManyToOne
-	@JoinColumn(name = "PERM_ID")
+	@JoinColumn(name = "perm_id")
 	private PermissionDao permissionDao;
 }

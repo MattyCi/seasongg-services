@@ -18,7 +18,7 @@ public
 class PermissionDao {
 
 	@Id
-	@Column(name = "PERM_ID", nullable = false)
+	@Column(name = "perm_id", nullable = false)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int permId;
 
