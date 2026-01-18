@@ -1,7 +1,7 @@
 package com.sgg.seasons.model;
 
 public enum SeasonStatus {
-    ACTIVE("A"), INACTIVE("I");
+    ACTIVE("ACTIVE"), INACTIVE("INACTIVE");
 
     private final String seasonStatus;
 

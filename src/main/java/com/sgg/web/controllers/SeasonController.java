@@ -64,8 +64,8 @@ public class SeasonController {
     @Post("/{id}/rounds")
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @SggSecurityRule(resourceType = SEASON, permissionType = WRITE, resourceIdName = "id")
-    public HttpResponse<RoundDto> createRound(@PathVariable String id, @Body RoundDto round) {
-        val result = roundService.createRound(id, round);
+    public HttpResponse<SeasonDto> createRound(@PathVariable String id, @Body RoundDto round) {
+        val result = roundService.addRound(id, round);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
 

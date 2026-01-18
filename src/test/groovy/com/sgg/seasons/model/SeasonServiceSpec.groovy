@@ -1,5 +1,6 @@
 package com.sgg.seasons.model
 
+import com.sgg.DaoFixtures
 import com.sgg.common.exception.ClientException
 import com.sgg.common.exception.NotFoundException
 import com.sgg.common.exception.SggException
@@ -9,7 +10,12 @@ import com.sgg.games.GameService
 import com.sgg.games.model.GameDao
 import com.sgg.games.model.GameDto
 import com.sgg.games.model.GameMapper
+import com.sgg.rounds.RoundMapper
 import com.sgg.rounds.model.RoundDao
+import com.sgg.rounds.model.RoundDto
+import com.sgg.rounds.model.RoundResultDao
+import com.sgg.rounds.model.RoundResultDto
+import com.sgg.seasons.ScoringService
 import com.sgg.seasons.SeasonRepository
 import com.sgg.seasons.SeasonService
 import com.sgg.users.UserDao
@@ -24,6 +30,8 @@ import spock.lang.Specification
 
 import java.time.OffsetDateTime
 
+import static com.sgg.DtoFixtures.*
+
 @MicronautTest(startApplication = false)
 class SeasonServiceSpec extends Specification {
     SeasonRepository seasonRepository = Mock()
@@ -33,6 +41,8 @@ class SeasonServiceSpec extends Specification {
     UserMapper userMapper = new UserMapperImpl()
     PermissionService permissionService = Mock()
     GameService gameService = Mock(constructorArgs: [Mock(GameRepository), Mock(GameMapper), Mock(ExternalGameClient)])
+    RoundMapper roundMapper = Mock()
+    ScoringService scoringService = Mock()
 
     SeasonService seasonService = new SeasonService(
             seasonRepository,
@@ -41,7 +51,9 @@ class SeasonServiceSpec extends Specification {
             seasonMapper,
             validator,
             userMapper,
-            permissionService
+            permissionService,
+            roundMapper,
+            scoringService
     )
 
     def "should get season"() {
@@ -294,7 +306,7 @@ class SeasonServiceSpec extends Specification {
         seasonService.removeRound("404", "404")
 
         then:
-        1 * seasonService.getSeason("404") >> Optional.empty()
+        1 * seasonRepository.findById(404) >> Optional.empty()
         0 * _
         def e = thrown(NotFoundException)
         e.message == "No season was found for the given ID."
@@ -335,5 +347,114 @@ class SeasonServiceSpec extends Specification {
         0 * _
         def e = thrown(SggException)
         e.message == "An unexpected error occurred trying to remove round, please try again."
+    }
+
+    def "should add round to season"() {
+        given:
+        def season = DaoFixtures.validSeason()
+        def round = roundWith(
+                [
+                        roundResult(10, matty()),
+                        roundResult(9, aaron()),
+                        roundResult(8, mistalegit())
+                ]
+        )
+        def roundDao = DaoFixtures.roundWith(
+                [
+                        DaoFixtures.roundResult(10, DaoFixtures.matty()),
+                        DaoFixtures.roundResult(9, DaoFixtures.aaron()),
+                        DaoFixtures.roundResult(8, DaoFixtures.mistalegit())
+                ]
+        )
+
+        when:
+        def result = seasonService.addRound("1", round)
+
+        then:
+        1 * seasonRepository.findById(1) >> Optional.of(season)
+        1 * userService.getCurrentUser() >> matty()
+        1 * validator.validate(round) >> []
+        1 * roundMapper.toRoundDao(round) >> roundDao
+        3 * scoringService.calculatePoints(_)
+        3 * userService.getUserById(_) >> new UserDto()
+        1 * scoringService.calculateStandings(season) >> [
+                new SeasonStandingDao(place: 1, points: 10, user: DaoFixtures.matty(), season: season),
+                new SeasonStandingDao(place: 2, points: 9, user: DaoFixtures.aaron(), season: season),
+                new SeasonStandingDao(place: 3, points: 8, user: DaoFixtures.mistalegit(), season: season)
+        ]
+        1 * seasonRepository.save({ s ->
+            season.standings.size() == 3
+            season.standings[0].user.username == "matty"
+            season.standings[1].user.username == "aaron"
+            season.standings[2].user.username == "mistalegit"
+        }) >> season
+        0 * _
+        result.seasonId == 1
+        result.standings.size() == 3
+    }
+
+    def "should not add round if season doesn't exist"() {
+        when:
+        seasonService.addRound("1", new RoundDto())
+
+        then:
+        1 * seasonRepository.findById(1L) >> Optional.empty()
+        0 * _
+        def e = thrown(NotFoundException)
+        e.message == "No season was found for the given ID."
+    }
+
+    def "should not add round if season inactive"() {
+        given:
+        def season = SeasonDao.builder()
+                .seasonId(1)
+                .status("INACTIVE")
+                .build()
+
+        when:
+        seasonService.addRound("1", new RoundDto())
+
+        then:
+        1 * seasonRepository.findById(1L) >> Optional.of(season)
+        0 * _
+        def e = thrown(ClientException)
+        e.message == "Rounds cannot be added because the season has ended."
+    }
+
+    def "should throw client exception when a player does not exist"() {
+        given:
+        def resultDto1 = RoundResultDto.builder().place(1)
+                .user(UserDto.builder().userId(123).username("some-user").build())
+                .build()
+        def resultDto2 = RoundResultDto.builder().place(2)
+                .user(UserDto.builder().userId(404).username("non-existent").build())
+                .build()
+        def roundDto = RoundDto.builder()
+                .roundResults([resultDto1, resultDto2])
+                .build()
+        def resultDao1 = RoundResultDao.builder().place(1)
+                .user(UserDao.builder().userId(123).username("some-user").build())
+                .build()
+        def resultDao2 = RoundResultDao.builder().place(2)
+                .user(UserDao.builder().userId(404).username("non-existent").build())
+                .build()
+        def roundDao = RoundDao.builder()
+                .roundResults([resultDao1, resultDao2])
+                .build()
+
+        when:
+        seasonService.addRound("1", roundDto)
+
+        then:
+        1 * seasonRepository.findById(1) >> Optional.of(SeasonDao.builder().seasonId(1L).name("season").status("ACTIVE").build())
+        1 * userService.getCurrentUser() >> UserDto.builder().userId(99L).username("creator").build()
+        1 * validator.validate(roundDto) >> []
+        1 * roundMapper.toRoundDao(roundDto) >> roundDao
+        2 * scoringService.calculatePoints(_)
+        1 * userService.getUserById(123) >> new UserDto()
+        1 * userService.getUserById(404L) >> { throw new NotFoundException("User not found!") }
+        0 * _
+        def e = thrown(ClientException)
+        e.message == "Failed to create round because the player non-existent in place 2 does not exist."
     }
 }

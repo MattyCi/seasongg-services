@@ -4,6 +4,11 @@ import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
 import com.sgg.games.GameService;
+import com.sgg.rounds.RoundMapper;
+import com.sgg.rounds.model.RoundDao;
+import com.sgg.rounds.model.RoundDto;
+import com.sgg.rounds.model.RoundResultDao;
+import com.sgg.seasons.model.SeasonDao;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.seasons.model.SeasonMapper;
 import com.sgg.seasons.model.SeasonStatus;
@@ -39,6 +44,8 @@ public class SeasonService {
     private final Validator validator;
     private final UserMapper userMapper;
     private final PermissionService permissionService;
+    private final RoundMapper roundMapper;
+    private final ScoringService scoringService;
 
     @Transactional(readOnly = true)
     public SeasonDto getSeason(String id) {
@@ -54,7 +61,7 @@ public class SeasonService {
     public SeasonDto createSeason(SeasonDto season) {
         val creator = userService.getCurrentUser();
         initSeason(season, creator);
-        validateSeason(season);
+        validate(season);
         season.setName(season.getName().trim());
         if (seasonRepository.findByNameIgnoreCase(season.getName()).isPresent())
             throw new ClientException("A season with that name already exists.");
@@ -65,8 +72,8 @@ public class SeasonService {
         return seasonMapper.toSeasonDto(persistedSeason);
     }
 
-    private void validateSeason(SeasonDto season) {
-        val violations = validator.validate(season);
+    private void validate(Object object) {
+        val violations = validator.validate(object);
         if (!violations.isEmpty()) {
             throw new ClientException(violations.stream()
                     .map(ConstraintViolation::getMessage)
@@ -84,7 +91,7 @@ public class SeasonService {
 
     @Transactional
     public SeasonDto updateSeason(String id, SeasonDto updatedSeason) {
-        validateSeason(updatedSeason);
+        validate(updatedSeason);
         val storedSeason = seasonRepository.findById(parseSeasonId(id)).map(seasonMapper::toSeasonDto)
                 .orElseThrow(() -> new NotFoundException(ERR_SEASON_NOT_FOUND));
         if (!storedSeason.getCreator().getUserId().equals(updatedSeason.getCreator().getUserId())) {
@@ -138,6 +145,53 @@ public class SeasonService {
     }
 
     @Transactional
+    public SeasonDto addRound(String seasonId, RoundDto round) {
+        val season = seasonRepository.findById(parseSeasonId(seasonId));
+        if (season.isEmpty()) {
+            throw new NotFoundException(ERR_SEASON_NOT_FOUND);
+        }
+        val seasonDao = season.get();
+        if (!SeasonStatus.ACTIVE.toString().equals(season.get().getStatus())) {
+            throw new ClientException("Rounds cannot be added because the season has ended.");
+        }
+        round.setRoundDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
+        round.setCreator(userService.getCurrentUser());
+        validate(round);
+        val roundDao = initRoundDao(round, seasonDao);
+        seasonDao.addRound(roundDao);
+        seasonDao.replaceStandings(scoringService.calculateStandings(seasonDao));
+        val saved = seasonRepository.save(season.get());
+        return seasonMapper.toSeasonDto(saved);
+    }
+
+    private RoundDao initRoundDao(RoundDto round, SeasonDao seasonDao) {
+        val roundDao = roundMapper.toRoundDao(round);
+        roundDao.setSeason(seasonDao);
+        roundDao.getRoundResults().stream()
+                .peek(rr -> rr.setRound(roundDao))
+                .peek(scoringService::calculatePoints)
+                .peek(this::validatePlayer)
+                .forEach(rr -> logRoundResult(roundDao.getSeason().getName(), rr));
+        return roundDao;
+    }
+
+    private void validatePlayer(RoundResultDao result) {
+        try {
+            userService.getUserById(result.getUser().getUserId());
+        } catch (NotFoundException ignored) {
+            val msg = String.format("Failed to create round because the player %s in place %s does not exist.",
+                    result.getUser().getUsername(), result.getPlace());
+            log.error(msg);
+            throw new ClientException(msg);
+        }
+    }
+
+    private static void logRoundResult(String seasonName, RoundResultDao roundResult) {
+        log.info("adding season {} round result for player {} who came in place {}",
+                seasonName, roundResult.getUser().getUsername(), roundResult.getPlace());
+    }
+
+    @Transactional
     public void removeRound(String seasonId, String roundId) throws SggException {
         val season = seasonRepository.findById(parseSeasonId(seasonId));
         if (season.isEmpty()) {
@@ -150,6 +204,7 @@ public class SeasonService {
             throw new NotFoundException("The round does not exist for the given season.");
         }
         try {
+            // TODO: recalculate season standings upon round removal
             season.get().getRounds().remove(seasonRound.get());
             seasonRepository.update(season.get());
         } catch (Exception e) {

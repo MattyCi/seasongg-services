@@ -41,7 +41,7 @@ public class SeasonDto {
     @Valid
     private GameDto game;
 
-    // TODO: add season standings
+    private List<SeasonStandingDto> standings;
 
     // TODO: add configurable season scoring options ie. averaged, Best Of N, etc.
 }
