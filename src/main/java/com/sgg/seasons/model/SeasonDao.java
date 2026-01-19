@@ -80,7 +80,10 @@ public class SeasonDao {
                 indicesToRemove.add(i);
             }
         }
-        indicesToRemove.forEach(i -> getStandings().remove((int) i));
+        val toRemove = indicesToRemove.stream().map(i -> getStandings().get(i)).toList();
+        if (!toRemove.isEmpty()) {
+            getStandings().removeAll(toRemove);
+        }
         for (SeasonStandingDao newStanding : newStandings) {
             if (currentStandingsMap.containsKey(newStanding.getUser().getUserId())) {
                 val updateStanding = currentStandingsMap.get(newStanding.getUser().getUserId());

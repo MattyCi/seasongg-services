@@ -193,6 +193,7 @@ public class SeasonService {
 
     @Transactional
     public void removeRound(String seasonId, String roundId) throws SggException {
+        // TODO: if any users no longer in season, remove their season permissions
         val season = seasonRepository.findById(parseSeasonId(seasonId));
         if (season.isEmpty()) {
             throw new NotFoundException(ERR_SEASON_NOT_FOUND);
@@ -204,8 +205,8 @@ public class SeasonService {
             throw new NotFoundException("The round does not exist for the given season.");
         }
         try {
-            // TODO: recalculate season standings upon round removal
             season.get().getRounds().remove(seasonRound.get());
+            season.get().replaceStandings(scoringService.calculateStandings(season.get()));
             seasonRepository.update(season.get());
         } catch (Exception e) {
             log.error("Unexpected error occurred trying to remove round {} from season {}", roundId, seasonId, e);

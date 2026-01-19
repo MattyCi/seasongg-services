@@ -301,6 +301,37 @@ class SeasonServiceSpec extends Specification {
         0 * _
     }
 
+    def "no season standings when no more rounds remain after round removal"() {
+        given:
+        def season = SeasonDao.builder()
+                .seasonId(123)
+                .standings([
+                        new SeasonStandingDao(place: 1, points: 10, roundsPlayed: 1, user: DaoFixtures.matty()),
+                        new SeasonStandingDao(place: 2, points: 9, roundsPlayed: 1, user: DaoFixtures.mistalegit())
+                ])
+                .build()
+        def rounds = [
+                DaoFixtures.roundWith([
+                        DaoFixtures.roundResult(10, DaoFixtures.matty()),
+                        DaoFixtures.roundResult(9, DaoFixtures.mistalegit())
+                ])
+        ]
+        rounds[0].roundId = 456
+        season.rounds = rounds
+
+        when:
+        seasonService.removeRound("123", "456")
+
+        then:
+        1 * seasonRepository.findById(123L) >> Optional.of(season)
+        1 * scoringService.calculateStandings(season) >> []
+        1 * seasonRepository.update({ SeasonDao s ->
+            assert s.rounds.size() == 0
+            assert s.standings.size() == 0
+        })
+        0 * _
+    }
+
     def "should not delete round if season doesn't exist"() {
         when:
         seasonService.removeRound("404", "404")

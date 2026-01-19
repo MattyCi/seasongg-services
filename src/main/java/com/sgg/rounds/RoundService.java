@@ -38,8 +38,6 @@ public class RoundService {
 
     @Transactional
     public void deleteRound(String seasonId, String roundId) {
-        // TODO: recalculate season standings after round deletion
-        // TODO: if any users no longer in season, remove their season permissions
         seasonService.removeRound(seasonId, roundId);
         log.info("user {} deleted round with id {} for season {}",
                 userService.getCurrentUser().getUsername(), roundId, seasonId);

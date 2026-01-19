@@ -46,6 +46,9 @@ public class ScoringService {
         try {
             val standings = new ArrayList<SeasonStandingDao>();
             val allResults = season.getRounds().stream().flatMap(r -> r.getRoundResults().stream()).toList();
+            if (allResults.isEmpty()) {
+                return standings;
+            }
             populateStandings(season, allResults, standings);
             averagePoints(standings);
             setIneligiblePlayers(standings);
