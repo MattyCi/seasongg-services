@@ -30,7 +30,6 @@ public class RoundDto {
     @Size(min = 2, max = 30, message = "{round.roundResults.Size}")
     private List<RoundResultDto> roundResults;
 
-    @NotNull(message = "{round.season.NotNull}")
     private SeasonDto season;
 
     @NotNull(message = "{round.creator.NotNull}")

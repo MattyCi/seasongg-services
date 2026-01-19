@@ -13,4 +13,8 @@ public interface SeasonMapper {
 
     @Mapping(target = "season", ignore = true)
     RoundDto roundDaoToRoundDto(RoundDao roundDao);
+
+    @Mapping(target = "season", ignore = true)
+    SeasonStandingDto toSeasonStandingDto(SeasonStandingDao seasonStandingDao);
+    SeasonStandingDao toSeasonStandingDao(SeasonStandingDto seasonStandingDto);
 }
