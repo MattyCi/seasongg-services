@@ -282,6 +282,7 @@ class SeasonServiceSpec extends Specification {
         given:
         def season = SeasonDao.builder()
                 .seasonId(123)
+                .standings([])
                 .build()
         def rounds = [
                 RoundDao.builder().roundId(123).season(season).build(),
@@ -294,6 +295,7 @@ class SeasonServiceSpec extends Specification {
 
         then:
         1 * seasonRepository.findById(123L) >> Optional.of(season)
+        1 * scoringService.calculateStandings(season) >> []
         1 * seasonRepository.update({ SeasonDao s ->
             assert s.rounds.size() == 1
             assert s.rounds[0].getRoundId() == 123
@@ -365,6 +367,7 @@ class SeasonServiceSpec extends Specification {
         given:
         def season = SeasonDao.builder()
                 .seasonId(1)
+                .standings([])
                 .build()
         def rounds = [ RoundDao.builder().roundId(123).season(season).build() ]
         season.rounds = rounds
@@ -374,6 +377,7 @@ class SeasonServiceSpec extends Specification {
 
         then:
         1 * seasonRepository.findById(1L) >> Optional.of(season)
+        1 * scoringService.calculateStandings(_) >> []
         1 * seasonRepository.update(_) >> { throw new Exception() }
         0 * _
         def e = thrown(SggException)
