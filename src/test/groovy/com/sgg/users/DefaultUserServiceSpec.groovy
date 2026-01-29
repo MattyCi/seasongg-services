@@ -1,12 +1,12 @@
 package com.sgg.users
 
-import com.sgg.users.authz.DefaultPermissionService
-import com.sgg.users.authz.PermissionDao
-import com.sgg.users.authz.PermissionRepository
-import com.sgg.users.authz.PermissionType
-import com.sgg.users.authz.ResourceType
-import com.sgg.users.authz.UserPermissionDao
-import com.sgg.users.authz.UserPermissionRepository
+import com.sgg.DaoFixtures
+import com.sgg.DtoFixtures
+import com.sgg.common.exception.ClientException
+import com.sgg.users.authz.*
+import com.sgg.users.security.PasswordEncoder
+import io.micronaut.security.utils.SecurityService
+import io.micronaut.validation.validator.Validator
 import spock.lang.Specification
 
 class DefaultUserServiceSpec extends Specification {
@@ -14,10 +14,65 @@ class DefaultUserServiceSpec extends Specification {
     PermissionRepository permissionRepository = Mock()
     UserPermissionRepository userPermissionRepository = Mock()
 
+    UserRepository userRepository = Mock()
+    UserMapper userMapper = Mock()
+    PasswordEncoder passwordEncoder = Mock()
+    SecurityService securityService = Mock()
+    Validator validator = Mock()
+
     DefaultPermissionService defaultPermissionService = new DefaultPermissionService(
             permissionRepository,
             userPermissionRepository
     )
+
+    DefaultUserService userService = new DefaultUserService(userRepository, userMapper, passwordEncoder, securityService, validator)
+
+    def "should register user"() {
+        given:
+        def request = new UserRegistrationRequest("matty", "password", "password")
+        def userDto = DtoFixtures.matty()
+
+        when:
+        def result = userService.registerUser(request)
+
+        then:
+        1 * validator.validate(request) >> []
+        1 * userRepository.findByUsernameIgnoreCase("matty") >> Optional.empty()
+        1 * passwordEncoder.encode("password") >> "hashed"
+        1 * userRepository.save(_)
+        1 * userMapper.userToUserDto(_) >> userDto
+        0 * _
+        result.username == "matty"
+    }
+
+    def "should not register user if passwords do not match"() {
+        given:
+        def request = new UserRegistrationRequest("matty", "password", "not-matching")
+
+        when:
+        userService.registerUser(request)
+
+        then:
+        1 * validator.validate(request) >> []
+        0 * _
+        def e = thrown(ClientException)
+        e.message == "The provided passwords do not match."
+    }
+
+    def "should not register user if username already in use"() {
+        given:
+        def request = new UserRegistrationRequest("matty", "password", "password")
+
+        when:
+        userService.registerUser(request)
+
+        then:
+        1 * validator.validate(request) >> []
+        1 * userRepository.findByUsernameIgnoreCase("matty") >> Optional.of(DaoFixtures.matty())
+        0 * _
+        def e = thrown(ClientException)
+        e.message == "The username provided is already in use."
+    }
 
     def "should create season admin permissions for user"() {
         given:
