@@ -22,16 +22,16 @@ public class LocalUserBootstrap {
     @EventListener
     void onStartup(StartupEvent event) {
         log.info("loading local user bootstrapping data...");
-        createTestUser("test_user_1");
-        createTestUser("test_user_2");
-        createTestUser("test_user_3");
+        createTestUser("test-user-1");
+        createTestUser("test-user-2");
+        createTestUser("test-user-3");
     }
 
     private void createTestUser(String username) {
         UserRegistrationRequest registrationRequest = new UserRegistrationRequest(
                 username,
-                "password123",
-                "password123"
+                "Password123",
+                "Password123"
         );
         userService.registerUser(registrationRequest);
     }

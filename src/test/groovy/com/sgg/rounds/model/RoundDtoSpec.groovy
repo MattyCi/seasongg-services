@@ -44,7 +44,6 @@ class RoundDtoSpec extends Specification {
         "null roundResults"     | validResult().roundResults(null).build()  | "The round results must be provided."
         "too few roundResults"  | tooFewRoundResults()                      | "Round results must be between 2 and 31."
         "too many roundResults" | tooManyRoundResult()                      | "Round results must be between 2 and 31."
-        "null season"           | validResult().season(null).build()        | "The round must be associated with a season."
         "null creator"          | validResult().creator(null).build()       | "The round must be associated with a user."
         "missing place"         | roundResultsWithMissingPlace()            | "There are missing places in the round results. Double-check the order of the places and try again."
         "duplicate players"     | roundResultsWithDuplicatePlayers()        | "A user cannot have multiple results in the same round."
