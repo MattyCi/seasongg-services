@@ -16,6 +16,9 @@ import com.sgg.users.UserMapper;
 import com.sgg.users.UserService;
 import com.sgg.users.authz.*;
 import com.sgg.users.model.UserDto;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
+import io.micronaut.data.model.Sort;
 import io.micronaut.validation.validator.Validator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -55,6 +58,14 @@ public class SeasonService {
         } else {
             return seasonMapper.toSeasonDto(season.get());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SeasonDto> listSeasons(Pageable pageable) {
+        val safePageable = Pageable.from(pageable.getNumber(), pageable.getSize(),
+                Sort.of(Sort.Order.desc("startDate")));
+        return seasonRepository.findAll(safePageable)
+                .map(seasonMapper::toSeasonDto);
     }
 
     @Transactional
