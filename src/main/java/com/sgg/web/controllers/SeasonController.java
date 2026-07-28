@@ -5,6 +5,8 @@ import com.sgg.rounds.model.RoundDto;
 import com.sgg.seasons.SeasonService;
 import com.sgg.seasons.model.SeasonDto;
 import com.sgg.users.authz.SggSecurityRule;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.*;
@@ -28,6 +30,13 @@ public class SeasonController {
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<SeasonDto> getSeasonById(String id) {
         val result = seasonService.getSeason(id);
+        return HttpResponse.status(HttpStatus.OK).body(result);
+    }
+
+    @Get
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<Page<SeasonDto>> listSeasons(Pageable pageable, @QueryValue(defaultValue = "false") boolean all) {
+        val result = seasonService.listSeasons(pageable, all);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
 

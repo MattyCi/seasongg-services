@@ -16,6 +16,9 @@ import com.sgg.users.UserMapper;
 import com.sgg.users.UserService;
 import com.sgg.users.authz.*;
 import com.sgg.users.model.UserDto;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
+import io.micronaut.data.model.Sort;
 import io.micronaut.validation.validator.Validator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -55,6 +58,20 @@ public class SeasonService {
         } else {
             return seasonMapper.toSeasonDto(season.get());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SeasonDto> listSeasons(Pageable pageable, boolean all) {
+        val sortedPage = Pageable.from(pageable.getNumber(), pageable.getSize(),
+                Sort.of(Sort.Order.desc("startDate")));
+        if (all) {
+            return seasonRepository.findAll(sortedPage)
+                    .map(seasonMapper::toSeasonDto);
+        }
+        val currentUser = userService.getCurrentUser();
+        val unsortedPage = Pageable.from(pageable.getNumber(), pageable.getSize()); // TODO: sort is hard-coded in query - will re-work when implementing gaming groups
+        return seasonRepository.findSeasonsForUser(currentUser.getUserId(), unsortedPage)
+                .map(seasonMapper::toSeasonDto);
     }
 
     @Transactional
