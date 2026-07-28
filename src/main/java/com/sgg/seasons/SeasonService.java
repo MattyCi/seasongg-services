@@ -61,10 +61,16 @@ public class SeasonService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SeasonDto> listSeasons(Pageable pageable) {
-        val safePageable = Pageable.from(pageable.getNumber(), pageable.getSize(),
+    public Page<SeasonDto> listSeasons(Pageable pageable, boolean all) {
+        val sortedPage = Pageable.from(pageable.getNumber(), pageable.getSize(),
                 Sort.of(Sort.Order.desc("startDate")));
-        return seasonRepository.findAll(safePageable)
+        if (all) {
+            return seasonRepository.findAll(sortedPage)
+                    .map(seasonMapper::toSeasonDto);
+        }
+        val currentUser = userService.getCurrentUser();
+        val unsortedPage = Pageable.from(pageable.getNumber(), pageable.getSize()); // TODO: sort is hard-coded in query - will re-work when implementing gaming groups
+        return seasonRepository.findSeasonsForUser(currentUser.getUserId(), unsortedPage)
                 .map(seasonMapper::toSeasonDto);
     }
 

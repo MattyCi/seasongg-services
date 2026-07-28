@@ -35,8 +35,8 @@ public class SeasonController {
 
     @Get
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<Page<SeasonDto>> listSeasons(Pageable pageable) {
-        val result = seasonService.listSeasons(pageable);
+    public HttpResponse<Page<SeasonDto>> listSeasons(Pageable pageable, @QueryValue(defaultValue = "false") boolean all) {
+        val result = seasonService.listSeasons(pageable, all);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
 
