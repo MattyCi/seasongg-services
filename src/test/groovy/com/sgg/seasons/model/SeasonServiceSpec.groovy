@@ -24,6 +24,9 @@ import com.sgg.users.UserMapperImpl
 import com.sgg.users.UserService
 import com.sgg.users.authz.PermissionService
 import com.sgg.users.model.UserDto
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
 import spock.lang.Specification
@@ -88,6 +91,51 @@ class SeasonServiceSpec extends Specification {
         0 * _
         def e = thrown(ClientException)
         e.message == "Invalid seasonId provided."
+    }
+
+    def "should list all seasons"() {
+        given:
+        def pageable = Pageable.from(2, 5)
+        def season1 = SeasonDao.builder().seasonId(1).name("Season 1").build()
+        def season2 = SeasonDao.builder().seasonId(2).name("Season 2").build()
+        def page = Page.of([season1, season2], pageable, 2)
+
+        when:
+        def result = seasonService.listSeasons(pageable, true)
+
+        then:
+        1 * seasonRepository.findAll({ Pageable p ->
+            p.number == 2
+            p.size == 5
+            p.sort.orderBy[0] == Sort.Order.desc("startDate")
+        }) >> page
+        0 * _
+        result.content.size() == 2
+        result.totalSize == 2
+        result.content[0].seasonId == 1
+        result.content[1].seasonId == 2
+    }
+
+    def "should list only the current user's seasons"() {
+        given:
+        def pageable = Pageable.from(0, 5)
+        def season = SeasonDao.builder().seasonId(1).name("My Season").build()
+        def page = Page.of([season], pageable, 1)
+
+        when:
+        def result = seasonService.listSeasons(pageable, false) // all=false returns only current user's seasons
+
+        then:
+        1 * userService.getCurrentUser() >> UserDto.builder().userId(123L).username("matty").build()
+        1 * seasonRepository.findSeasonsForUser(123L, { Pageable p ->
+            p.number == 0
+            p.size == 5
+            !p.sort.isSorted()
+        }) >> page
+        0 * _
+        result.content.size() == 1
+        result.totalSize == 1
+        result.content[0].seasonId == 1
     }
 
     def "should use game from game service in create season response"() {
