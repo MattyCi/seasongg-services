@@ -2,6 +2,8 @@ package com.sgg.users;
 
 import com.sgg.games.GameRepository;
 import com.sgg.games.model.GameDao;
+import com.sgg.rounds.model.RoundDao;
+import com.sgg.rounds.model.RoundResultDao;
 import com.sgg.seasons.SeasonRepository;
 import com.sgg.seasons.model.SeasonDao;
 import io.micronaut.context.annotation.Requires;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -45,6 +48,7 @@ public class LocalDataBootstrap {
         createTestUser("test-user-3");
 
         createTestSeasons();
+        createTestRounds();
     }
 
     private void createTestUser(String username) {
@@ -64,6 +68,72 @@ public class LocalDataBootstrap {
         createSeasonForUser("test-user-1", "Catan Summer Season", 100L);
         createSeasonForUser("test-user-2", "Wingspan Winter Season", 101L);
         createSeasonForUser("test-user-3", "Dominion 2020", 102L);
+    }
+
+    private void createTestRounds() {
+        try {
+            Optional<com.sgg.users.UserDao> user1Opt = userRepository.findByUsernameIgnoreCase("test-user-1");
+            Optional<com.sgg.users.UserDao> user2Opt = userRepository.findByUsernameIgnoreCase("test-user-2");
+            Optional<com.sgg.users.UserDao> user3Opt = userRepository.findByUsernameIgnoreCase("test-user-3");
+
+            if (user1Opt.isEmpty() || user2Opt.isEmpty()) {
+                log.warn("test users not found; skipping round creation");
+                return;
+            }
+
+            var user1 = user1Opt.get();
+            var user2 = user2Opt.get();
+            var user3 = user3Opt.orElse(null);
+
+            List<SeasonDao> seasons = new ArrayList<>();
+            seasonRepository.findAll().forEach(seasons::add);
+
+            for (SeasonDao season : seasons) {
+                // skip if rounds already exist
+                if (season.getRounds() != null && !season.getRounds().isEmpty()) {
+                    log.info("season {} already has rounds, skipping", season.getName());
+                    continue;
+                }
+
+                boolean includeUser3 = "Dominion 2020".equalsIgnoreCase(season.getName())
+                        || "Catan Summer Season".equalsIgnoreCase(season.getName());
+
+                int roundsToCreate = 1 + (int) (season.getSeasonId() % 3); // yields 1..3 deterministically
+
+                for (int r = 0; r < roundsToCreate; r++) {
+                    RoundDao round = RoundDao.builder()
+                            .roundDate(OffsetDateTime.now(ZoneId.of("America/New_York")).minusDays(r + 1))
+                            .roundResults(new ArrayList<>())
+                            .creator(season.getCreator())
+                            .build();
+
+                    // participants: always user1 and user2
+                    List<com.sgg.users.UserDao> participants = new ArrayList<>();
+                    participants.add(user1);
+                    participants.add(user2);
+                    if (includeUser3 && user3 != null) participants.add(user3);
+
+                    // assign places in order of participants list
+                    for (int i = 0; i < participants.size(); i++) {
+                        RoundResultDao rr = RoundResultDao.builder()
+                                .place(i + 1)
+                                .points(0.0)
+                                .user(participants.get(i))
+                                .build();
+                        rr.setRound(round);
+                        round.getRoundResults().add(rr);
+                    }
+
+                    season.addRound(round);
+                }
+
+                // persist season with new rounds
+                seasonRepository.update(season);
+                log.info("created {} rounds for season {}", roundsToCreate, season.getName());
+            }
+        } catch (Exception e) {
+            log.error("failed to create test rounds: {}", e.getMessage(), e);
+        }
     }
 
     private void createGameIfNotExists(Long gameId, String name) {
