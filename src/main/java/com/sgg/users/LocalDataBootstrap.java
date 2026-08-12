@@ -72,7 +72,7 @@ public class LocalDataBootstrap {
     }
 
     @Transactional
-    private void createTestRounds() {
+    void createTestRounds() {
         try {
             Optional<com.sgg.users.UserDao> user1Opt = userRepository.findByUsernameIgnoreCase("test-user-1");
             Optional<com.sgg.users.UserDao> user2Opt = userRepository.findByUsernameIgnoreCase("test-user-2");
