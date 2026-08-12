@@ -2,10 +2,14 @@ package com.sgg.users;
 
 import com.sgg.games.GameRepository;
 import com.sgg.games.model.GameDao;
+import com.sgg.rounds.RoundService;
+import com.sgg.rounds.model.RoundDto;
+import com.sgg.rounds.model.RoundResultDto;
 import com.sgg.rounds.model.RoundDao;
 import com.sgg.rounds.model.RoundResultDao;
 import com.sgg.seasons.SeasonRepository;
 import com.sgg.seasons.model.SeasonDao;
+import com.sgg.users.model.UserDto;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.runtime.event.annotation.EventListener;
@@ -30,16 +34,19 @@ public class LocalDataBootstrap {
     private final UserRepository userRepository;
     private final SeasonRepository seasonRepository;
     private final GameRepository gameRepository;
+    private final RoundService roundService;
 
     @Inject
     LocalDataBootstrap(UserService userService,
                        UserRepository userRepository,
                        SeasonRepository seasonRepository,
-                       GameRepository gameRepository) {
+                       GameRepository gameRepository,
+                       RoundService roundService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.seasonRepository = seasonRepository;
         this.gameRepository = gameRepository;
+        this.roundService = roundService;
     }
 
     @EventListener
@@ -94,26 +101,31 @@ public class LocalDataBootstrap {
                     continue;
                 }
 
-                // create a single round where every user participates
-                RoundDao round = RoundDao.builder()
-                        .roundDate(OffsetDateTime.now(ZoneId.of("America/New_York")))
-                        .roundResults(new ArrayList<>())
-                        .creator(season.getCreator())
-                        .build();
+                // create a single round where every user participates, using RoundService to ensure standings are calculated
+                try {
+                    UserDto creatorDto = userService.getUserById(season.getCreator().getUserId());
+                    List<RoundResultDto> results = new ArrayList<>();
+                    for (int i = 0; i < users.size(); i++) {
+                        UserDto p = userService.getUserById(users.get(i).getUserId());
+                        RoundResultDto rr = RoundResultDto.builder()
+                                .place(i + 1)
+                                .points(0.0)
+                                .user(p)
+                                .build();
+                        results.add(rr);
+                    }
 
-                for (int i = 0; i < users.size(); i++) {
-                    RoundResultDao rr = RoundResultDao.builder()
-                            .place(i + 1)
-                            .points(0.0)
-                            .user(users.get(i))
+                    RoundDto roundDto = RoundDto.builder()
+                            .roundDate(OffsetDateTime.now(ZoneId.of("America/New_York")))
+                            .roundResults(results)
+                            .creator(creatorDto)
                             .build();
-                    rr.setRound(round);
-                    round.getRoundResults().add(rr);
-                }
 
-                season.addRound(round);
-                seasonRepository.update(season);
-                log.info("created 1 round for season {} with {} players", season.getName(), users.size());
+                    roundService.addRound(season.getSeasonId().toString(), roundDto);
+                    log.info("created 1 round for season {} with {} players via RoundService", season.getName(), users.size());
+                } catch (Exception e) {
+                    log.error("failed to add round via RoundService for season {}: {}", season.getName(), e.getMessage(), e);
+                }
             }
         } catch (Exception e) {
             log.error("failed to create test rounds: {}", e.getMessage(), e);
