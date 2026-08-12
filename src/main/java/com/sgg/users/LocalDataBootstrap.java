@@ -12,6 +12,7 @@ import io.micronaut.runtime.event.annotation.EventListener;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import io.micronaut.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -70,6 +71,7 @@ public class LocalDataBootstrap {
         createSeasonForUser("test-user-3", "Dominion 2020", 102L);
     }
 
+    @Transactional
     private void createTestRounds() {
         try {
             Optional<com.sgg.users.UserDao> user1Opt = userRepository.findByUsernameIgnoreCase("test-user-1");
@@ -85,8 +87,7 @@ public class LocalDataBootstrap {
             var user2 = user2Opt.get();
             var user3 = user3Opt.orElse(null);
 
-            List<SeasonDao> seasons = new ArrayList<>();
-            seasonRepository.findAll().forEach(seasons::add);
+            List<SeasonDao> seasons = new ArrayList<>(seasonRepository.findAll());
 
             for (SeasonDao season : seasons) {
                 // skip if rounds already exist
@@ -107,13 +108,11 @@ public class LocalDataBootstrap {
                             .creator(season.getCreator())
                             .build();
 
-                    // participants: always user1 and user2
                     List<com.sgg.users.UserDao> participants = new ArrayList<>();
                     participants.add(user1);
                     participants.add(user2);
                     if (includeUser3 && user3 != null) participants.add(user3);
 
-                    // assign places in order of participants list
                     for (int i = 0; i < participants.size(); i++) {
                         RoundResultDao rr = RoundResultDao.builder()
                                 .place(i + 1)
@@ -127,7 +126,6 @@ public class LocalDataBootstrap {
                     season.addRound(round);
                 }
 
-                // persist season with new rounds
                 seasonRepository.update(season);
                 log.info("created {} rounds for season {}", roundsToCreate, season.getName());
             }
