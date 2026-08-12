@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Comparator;
 
 @Slf4j
 @Singleton
@@ -74,18 +75,15 @@ public class LocalDataBootstrap {
     @Transactional
     void createTestRounds() {
         try {
-            Optional<com.sgg.users.UserDao> user1Opt = userRepository.findByUsernameIgnoreCase("test-user-1");
-            Optional<com.sgg.users.UserDao> user2Opt = userRepository.findByUsernameIgnoreCase("test-user-2");
-            Optional<com.sgg.users.UserDao> user3Opt = userRepository.findByUsernameIgnoreCase("test-user-3");
-
-            if (user1Opt.isEmpty() || user2Opt.isEmpty()) {
-                log.warn("test users not found; skipping round creation");
+            List<com.sgg.users.UserDao> users = new ArrayList<>();
+            userRepository.findAll().forEach(users::add);
+            if (users.isEmpty()) {
+                log.warn("no users found; skipping round creation");
                 return;
             }
 
-            var user1 = user1Opt.get();
-            var user2 = user2Opt.get();
-            var user3 = user3Opt.orElse(null);
+            // deterministic order for places
+            users.sort(Comparator.comparing(u -> u.getUsername().toLowerCase()));
 
             List<SeasonDao> seasons = new ArrayList<>(seasonRepository.findAll());
 
@@ -96,38 +94,26 @@ public class LocalDataBootstrap {
                     continue;
                 }
 
-                boolean includeUser3 = "Dominion 2020".equalsIgnoreCase(season.getName())
-                        || "Catan Summer Season".equalsIgnoreCase(season.getName());
+                // create a single round where every user participates
+                RoundDao round = RoundDao.builder()
+                        .roundDate(OffsetDateTime.now(ZoneId.of("America/New_York")))
+                        .roundResults(new ArrayList<>())
+                        .creator(season.getCreator())
+                        .build();
 
-                int roundsToCreate = 1 + (int) (season.getSeasonId() % 3); // yields 1..3 deterministically
-
-                for (int r = 0; r < roundsToCreate; r++) {
-                    RoundDao round = RoundDao.builder()
-                            .roundDate(OffsetDateTime.now(ZoneId.of("America/New_York")).minusDays(r + 1))
-                            .roundResults(new ArrayList<>())
-                            .creator(season.getCreator())
+                for (int i = 0; i < users.size(); i++) {
+                    RoundResultDao rr = RoundResultDao.builder()
+                            .place(i + 1)
+                            .points(0.0)
+                            .user(users.get(i))
                             .build();
-
-                    List<com.sgg.users.UserDao> participants = new ArrayList<>();
-                    participants.add(user1);
-                    participants.add(user2);
-                    if (includeUser3 && user3 != null) participants.add(user3);
-
-                    for (int i = 0; i < participants.size(); i++) {
-                        RoundResultDao rr = RoundResultDao.builder()
-                                .place(i + 1)
-                                .points(0.0)
-                                .user(participants.get(i))
-                                .build();
-                        rr.setRound(round);
-                        round.getRoundResults().add(rr);
-                    }
-
-                    season.addRound(round);
+                    rr.setRound(round);
+                    round.getRoundResults().add(rr);
                 }
 
+                season.addRound(round);
                 seasonRepository.update(season);
-                log.info("created {} rounds for season {}", roundsToCreate, season.getName());
+                log.info("created 1 round for season {} with {} players", season.getName(), users.size());
             }
         } catch (Exception e) {
             log.error("failed to create test rounds: {}", e.getMessage(), e);
