@@ -171,8 +171,12 @@ public class SeasonService {
         if (!SeasonStatus.ACTIVE.toString().equals(season.get().getStatus())) {
             throw new ClientException("Rounds cannot be added because the season has ended.");
         }
-        round.setRoundDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
-        round.setCreator(userService.getCurrentUser());
+        if (round.getRoundDate() == null) {
+            round.setRoundDate(OffsetDateTime.now(ZoneId.of("America/New_York")));
+        }
+        if (round.getCreator() == null) {
+            round.setCreator(userService.getCurrentUser());
+        }
         validate(round);
         val roundDao = initRoundDao(round, seasonDao);
         seasonDao.addRound(roundDao);
