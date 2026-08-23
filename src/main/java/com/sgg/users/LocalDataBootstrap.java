@@ -49,7 +49,7 @@ public class LocalDataBootstrap {
 
     @EventListener
     void onStartup(StartupEvent event) {
-        log.info("loading local user bootstrapping data...");
+        log.info("loading local bootstrapping data...");
         createTestUser("test-user-1");
         createTestUser("test-user-2");
         createTestUser("test-user-3");
