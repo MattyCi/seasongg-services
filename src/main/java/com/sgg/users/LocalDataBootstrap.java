@@ -78,6 +78,43 @@ public class LocalDataBootstrap {
         createSeasonForUser("test-user-3", "Champions of Catan", 100L);
     }
 
+    private void createGameIfNotExists(Long gameId, String name) {
+        if (gameRepository.findById(gameId).isEmpty()) {
+            GameDao game = GameDao.builder()
+                    .gameId(gameId)
+                    .name(name)
+                    .seasons(new ArrayList<>())
+                    .build();
+            gameRepository.save(game);
+            log.info("created local game {} ({})", name, gameId);
+        }
+    }
+
+    private void createSeasonForUser(String username, String seasonName, Long gameId) {
+        try {
+            Optional<UserDao> userOpt = userRepository.findByUsernameIgnoreCase(username);
+            if (userOpt.isEmpty()) {
+                log.warn("user {} not found, cannot create season {}", username, seasonName);
+                return;
+            }
+            var userDao = userOpt.get();
+            var game = gameRepository.findById(gameId).orElseThrow();
+            SeasonDao season = SeasonDao.builder()
+                    .name(seasonName)
+                    .endDate(OffsetDateTime.now(ZoneId.of("America/New_York")).plusDays(90))
+                    .creator(userDao)
+                    .status(SeasonStatus.ACTIVE.toString())
+                    .rounds(new ArrayList<>())
+                    .standings(new ArrayList<>())
+                    .game(game)
+                    .build();
+            seasonRepository.save(season);
+            log.info("created local season {} for user {}", seasonName, username);
+        } catch (Exception e) {
+            log.error("failed to create test season {}: {}", seasonName, e.getMessage(), e);
+        }
+    }
+
     @Transactional
     void createTestRounds() {
         try {
@@ -115,43 +152,6 @@ public class LocalDataBootstrap {
             }
         } catch (Exception e) {
             log.error("failed to create test rounds: {}", e.getMessage(), e);
-        }
-    }
-
-    private void createGameIfNotExists(Long gameId, String name) {
-        if (gameRepository.findById(gameId).isEmpty()) {
-            GameDao game = GameDao.builder()
-                    .gameId(gameId)
-                    .name(name)
-                    .seasons(new ArrayList<>())
-                    .build();
-            gameRepository.save(game);
-            log.info("created local game {} ({})", name, gameId);
-        }
-    }
-
-    private void createSeasonForUser(String username, String seasonName, Long gameId) {
-        try {
-            Optional<UserDao> userOpt = userRepository.findByUsernameIgnoreCase(username);
-            if (userOpt.isEmpty()) {
-                log.warn("user {} not found, cannot create season {}", username, seasonName);
-                return;
-            }
-            var userDao = userOpt.get();
-            var game = gameRepository.findById(gameId).orElseThrow();
-            SeasonDao season = SeasonDao.builder()
-                    .name(seasonName)
-                    .endDate(OffsetDateTime.now(ZoneId.of("America/New_York")).plusDays(90))
-                    .creator(userDao)
-                    .status(SeasonStatus.ACTIVE.toString())
-                    .rounds(new ArrayList<>())
-                    .standings(new ArrayList<>())
-                    .game(game)
-                    .build();
-            seasonRepository.save(season);
-            log.info("created local season {} for user {}", seasonName, username);
-        } catch (Exception e) {
-            log.error("failed to create test season {}: {}", seasonName, e.getMessage(), e);
         }
     }
 }
