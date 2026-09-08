@@ -1,7 +1,8 @@
 package com.sgg.users;
 
 import com.sgg.games.GameRepository;
-import com.sgg.games.model.GameDao;
+import com.sgg.games.GameService;
+import com.sgg.games.model.GameDto;
 import com.sgg.rounds.RoundService;
 import com.sgg.rounds.model.RoundDto;
 import com.sgg.rounds.model.RoundResultDto;
@@ -32,6 +33,7 @@ public class LocalDataBootstrap {
     private final UserRepository userRepository;
     private final SeasonRepository seasonRepository;
     private final GameRepository gameRepository;
+    private final GameService gameService;
     private final RoundService roundService;
 
     @Inject
@@ -39,11 +41,13 @@ public class LocalDataBootstrap {
                        UserRepository userRepository,
                        SeasonRepository seasonRepository,
                        GameRepository gameRepository,
+                       GameService gameService,
                        RoundService roundService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.seasonRepository = seasonRepository;
         this.gameRepository = gameRepository;
+        this.gameService = gameService;
         this.roundService = roundService;
     }
 
@@ -79,14 +83,15 @@ public class LocalDataBootstrap {
     }
 
     private void createGameIfNotExists(Long gameId, String name) {
-        if (gameRepository.findById(gameId).isEmpty()) {
-            GameDao game = GameDao.builder()
+        try {
+            GameDto game = GameDto.builder()
                     .gameId(gameId)
                     .name(name)
-                    .seasons(new ArrayList<>())
                     .build();
-            gameRepository.save(game);
-            log.info("created local game {} ({})", name, gameId);
+            gameService.maybeCreateGame(game);
+            log.info("ensured local game exists: {} ({})", name, gameId);
+        } catch (Exception e) {
+            log.error("failed to create test game {} ({}): {}", name, gameId, e.getMessage(), e);
         }
     }
 
