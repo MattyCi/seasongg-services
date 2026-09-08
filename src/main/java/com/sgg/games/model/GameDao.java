@@ -5,6 +5,7 @@ import com.sgg.seasons.model.SeasonDao;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -26,4 +27,10 @@ public class GameDao {
     @OneToMany(mappedBy = "game")
     @JsonIgnore
     private List<SeasonDao> seasons;
+
+    @Column(name = "thumbnail")
+    private String thumbnail;
+
+    @Column(name = "date_added")
+    private OffsetDateTime dateAdded;
 }

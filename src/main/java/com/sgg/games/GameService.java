@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 @Singleton
 @Slf4j
@@ -28,7 +30,9 @@ public class GameService {
             val externalGame = gameClient.getGame(game.getGameId())
                     .blockOptional(Duration.ofSeconds(10)); // TODO: eventually make everything reactive
             if (externalGame.isPresent()) {
-                gameRepository.save(gameMapper.toGameDao(externalGame.get()));
+                val gameDao = gameMapper.toGameDao(externalGame.get());
+                gameDao.setDateAdded(OffsetDateTime.now(ZoneId.of("America/New_York")));
+                gameRepository.save(gameDao);
                 return externalGame.get();
             } else {
                 throw new ClientException("Cannot create game that doesn't exist in external service.");
