@@ -68,14 +68,14 @@ public class LocalDataBootstrap {
     }
 
     private void createTestSeasons() {
-        createGameIfNotExists(100L, "Catan");
-        createGameIfNotExists(101L, "Wingspan");
-        createGameIfNotExists(102L, "Dominion");
+        createGameIfNotExists(13L, "Catan");
+        createGameIfNotExists(266192L, "Wingspan");
+        createGameIfNotExists(36218L, "Dominion");
 
-        createSeasonForUser("test-user-1", "Catan Summer Season", 100L);
-        createSeasonForUser("test-user-2", "Wingspan Winter Season", 101L);
-        createSeasonForUser("test-user-3", "Dominion 2020", 102L);
-        createSeasonForUser("test-user-3", "Champions of Catan", 100L);
+        createSeasonForUser("test-user-1", "Catan Summer Season", 13L);
+        createSeasonForUser("test-user-2", "Wingspan Winter Season", 266192L);
+        createSeasonForUser("test-user-3", "Dominion 2020", 36218L);
+        createSeasonForUser("test-user-3", "Champions of Catan", 13L);
     }
 
     private void createGameIfNotExists(Long gameId, String name) {
