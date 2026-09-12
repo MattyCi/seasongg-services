@@ -1,5 +1,6 @@
 package com.sgg.users;
 
+import com.sgg.common.exception.AuthenticationException;
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.ClientException;
 import com.sgg.common.exception.SggException;
@@ -98,7 +99,7 @@ public class DefaultUserService implements UserService {
 
     public UserDto getCurrentUser() {
         return securityService.getAuthentication()
-                .orElseThrow(() -> new SggException(ERR_MUST_BE_AUTHENTICATED))
+                .orElseThrow(() -> new AuthenticationException(ERR_MUST_BE_AUTHENTICATED))
                 .getAttributes()
                 .entrySet().stream()
                 .filter((e) -> "userId".equals(e.getKey()))
