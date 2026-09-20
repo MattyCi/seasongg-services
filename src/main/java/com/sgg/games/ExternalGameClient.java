@@ -19,12 +19,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Fetches game data from the BoardGameGeek XML API. Request construction
- * lives in {@link BggRequestBuilder}; response parsing lives in
- * {@link BggGameXmlParser}. This class is only responsible for orchestrating
- * the two of them over HTTP.
- */
 @Singleton
 @Slf4j
 public class ExternalGameClient {

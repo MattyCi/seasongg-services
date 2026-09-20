@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Knows how to build an authenticated request for each BGG XML API endpoint.
- * Nothing in this class knows or cares what the response looks like.
- */
 @Singleton
 public class BggRequestBuilder {
 

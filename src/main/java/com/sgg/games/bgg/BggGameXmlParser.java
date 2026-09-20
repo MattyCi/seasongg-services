@@ -28,8 +28,7 @@ import java.util.function.Consumer;
 import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
- * Turns raw BGG XML API responses into GameDto objects. This class only
- * parses; it knows nothing about HTTP, reactive streams, or endpoints.
+ * Turns raw BGG XML API responses into GameDto objects.
  */
 @Singleton
 @Slf4j
@@ -88,8 +87,6 @@ public class BggGameXmlParser {
         return thumbnailsById;
     }
 
-    // ---- Per-item parsing ----
-
     private Optional<GameDto> parseGame(Element item) {
         return parseId(item).map(id -> {
             GameDto game = toGame(item);
@@ -140,8 +137,6 @@ public class BggGameXmlParser {
         }
         return Optional.ofNullable(BggXmlAttributes.readThumbnail(thumbnails.item(0)));
     }
-
-    // ---- Structural / validation helpers ----
 
     private void assertNoBggError(Document document) {
         NodeList errors = document.getElementsByTagName(EL_ERROR);
