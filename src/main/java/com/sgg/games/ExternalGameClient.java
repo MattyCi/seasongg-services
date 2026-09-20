@@ -2,205 +2,101 @@ package com.sgg.games;
 
 import com.sgg.common.exception.NotFoundException;
 import com.sgg.common.exception.SggException;
+import com.sgg.games.bgg.BggGameXmlParser;
+import com.sgg.games.bgg.BggRequestBuilder;
 import com.sgg.games.model.GameDto;
-import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.uri.UriBuilder;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.StringReader;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import lombok.val;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
 import org.reactivestreams.Publisher;
-import org.xml.sax.SAXException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import static org.w3c.dom.Node.ELEMENT_NODE;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+/**
+ * Fetches game data from the BoardGameGeek XML API. Request construction
+ * lives in {@link BggRequestBuilder}; response parsing lives in
+ * {@link BggGameXmlParser}. This class is only responsible for orchestrating
+ * the two of them over HTTP.
+ */
 @Singleton
 @Slf4j
 public class ExternalGameClient {
 
-    @Client
-    private final HttpClient httpClient;
-    private static final String BGG_HOST = "www.boardgamegeek.com";
-    private static final URI POPULAR_GAMES_URI = UriBuilder.of("/xmlapi2")
-            .scheme("https")
-            .host(BGG_HOST)
-            .path("hot")
-            .queryParam("type", "boardgame")
-            .build();
+    private static final int MAX_THUMBNAIL_LOOKUP_IDS = 20;
 
-    @Value("${games.bgg.token}")
-    private String bggToken;
+    private final HttpClient httpClient;
+    private final BggRequestBuilder requestBuilder;
+    private final BggGameXmlParser xmlParser;
 
     @Inject
-    public ExternalGameClient(HttpClient httpClient) {
+    public ExternalGameClient(HttpClient httpClient, BggRequestBuilder requestBuilder, BggGameXmlParser xmlParser) {
         this.httpClient = httpClient;
+        this.requestBuilder = requestBuilder;
+        this.xmlParser = xmlParser;
     }
 
     public Mono<GameDto> getGame(Long gameId) {
-        val uri = UriBuilder.of("/xmlapi2")
-                .scheme("https")
-                .host(BGG_HOST)
-                .path("thing")
-                .queryParam("id", gameId)
-                .build();
-        HttpRequest<?> req = HttpRequest.GET(uri).header("Authorization", "Bearer " + bggToken);
-        return Mono.from(httpClient.retrieve(req))
-                .flatMap(resp -> Mono.fromCallable(() -> parseGetGameXml(resp))
-                        .subscribeOn(Schedulers.boundedElastic())
-                )
-                .onErrorResume(e -> {
-                    if (e instanceof NotFoundException) {
-                        return Mono.empty();
-                    } else {
-                        log.error("Failed to retrieve or parse game from BGG", e);
-                        return Mono.error(new SggException("Unexpected error occurred finding game from BGG."));
-                    }
-                });
+        return fetchAndParse(requestBuilder.gameById(gameId), xmlParser::parseSingleGame)
+                .onErrorResume(this::handleGetGameError);
     }
 
-    private GameDto parseGetGameXml(String rawResponse) {
-        Document doc = getXmlDocument(rawResponse);
-        var error = doc.getElementsByTagName("error");
-        if (error.getLength() > 0) {
-            log.error(error.item(0).getAttributes().getNamedItem("message").getNodeValue());
-            throw new SggException("Error returned from BGG in get game call.");
+    private Mono<GameDto> handleGetGameError(Throwable e) {
+        if (e instanceof NotFoundException) {
+            return Mono.empty();
         }
-        NodeList items = doc.getElementsByTagName("item");
-        if (items.getLength() == 0) {
-            throw new NotFoundException("Game not found.");
-        } else if (items.getLength() != 1) {
-            throw new SggException(String.format("BGG returned unexpected amount of games: %s", items.getLength()));
-        }
-        Element item = (Element) items.item(0);
-        String idAttr = item.getAttribute("id");
-        long id;
-        try {
-            id = Long.parseLong(idAttr);
-        } catch (NumberFormatException nfe) {
-            throw new SggException(String.format("Unable to parse id from BGG item %s", idAttr));
-        }
-        GameDto game = populateGameData(item);
-        game.setGameId(id);
-        return game;
+        log.error("Failed to retrieve or parse game from BGG", e);
+        return Mono.error(new SggException("Unexpected error occurred finding game from BGG."));
     }
 
     public Mono<List<GameDto>> getPopularGames() {
-        HttpRequest<?> req = HttpRequest.GET(POPULAR_GAMES_URI)
-                .header("Authorization", "Bearer " + bggToken);
-        Publisher<String> publisher = httpClient.retrieve(req, String.class);
-        return Mono.from(publisher)
-                .flatMap(resp -> Mono.fromCallable(() -> parsePopularGamesXml(resp))
-                        .subscribeOn(Schedulers.boundedElastic())
-                )
+        return fetchAndParse(requestBuilder.popularGames(), xmlParser::parsePopularGames)
+                .onErrorResume(e -> logAndReturnEmptyList("popular games", e));
+    }
+
+    public Mono<List<GameDto>> searchGames(String query) {
+        // TODO: validate query string before passing onto BGG
+        return fetchAndParse(requestBuilder.searchGames(query), xmlParser::parseSearchResults)
+                .flatMap(this::enrichWithThumbnails)
+                .onErrorResume(e -> logAndReturnEmptyList("search results", e));
+    }
+
+    private Mono<List<GameDto>> enrichWithThumbnails(List<GameDto> games) {
+        if (games.isEmpty()) {
+            return Mono.just(games);
+        }
+        List<Long> idsToLookup = games.stream()
+                .map(GameDto::getGameId)
+                .limit(MAX_THUMBNAIL_LOOKUP_IDS)
+                .collect(Collectors.toList());
+        return fetchAndParse(requestBuilder.gamesByIds(idsToLookup), xmlParser::parseThumbnails)
+                .map(thumbnailsById -> applyThumbnails(games, thumbnailsById))
                 .onErrorResume(e -> {
-                    log.error("Failed to retrieve or parse popular games from BGG", e);
-                    return Mono.just(List.of());
+                    log.error("Failed to enrich search results with thumbnails from BGG", e);
+                    return Mono.just(games);
                 });
     }
 
-    private List<GameDto> parsePopularGamesXml(String rawResponse) {
-        List<GameDto> popularGames = new ArrayList<>();
-        Document doc = getXmlDocument(rawResponse);
-        NodeList items = doc.getElementsByTagName("item");
-        if (items.getLength() == 0) {
-            log.error("Zero items retrieved from BGG response.");
-            return List.of();
-        }
-        for (int i = 0; i < items.getLength(); i++) {
-            Element item = (Element) items.item(i);
-            String idAttr = item.getAttribute("id");
-            String rankAttr = item.getAttribute("rank");
-            long id;
-            long rank;
-            try {
-                id = Long.parseLong(idAttr);
-                rank = Long.parseLong(rankAttr);
-            } catch (NumberFormatException nfe) {
-                log.error("Unable to parse id/rank from BGG item {}, {}", idAttr, rankAttr);
-                continue;
-            }
-            GameDto game = populateGameData(item);
-            game.setGameId(id);
-            game.setRank(rank);
-            popularGames.add(game);
-        }
-        return popularGames;
+    private List<GameDto> applyThumbnails(List<GameDto> games, Map<Long, String> thumbnailsById) {
+        games.forEach(game -> game.setThumbnail(thumbnailsById.get(game.getGameId())));
+        return games;
     }
 
-    private static Document getXmlDocument(String resp) {
-        if (resp == null || resp.isBlank()) {
-            val msg = "Response from BGG was empty.";
-            log.error(msg);
-            throw new SggException(msg);
-        }
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db;
-        Document doc;
-        try {
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            db = dbf.newDocumentBuilder();
-            doc = db.parse(new InputSource(new StringReader(resp)));
-        } catch (SAXException | IOException | ParserConfigurationException e) {
-            val msg = "Error parsing XML from BGG.";
-            log.error(msg, e);
-            throw new SggException(msg);
-        }
-        return doc;
+    private <T> Mono<List<T>> logAndReturnEmptyList(String what, Throwable e) {
+        log.error("Failed to retrieve or parse {} from BGG", what, e);
+        return Mono.just(List.of());
     }
 
-    private static GameDto populateGameData(Element item) {
-        GameDto game = new GameDto();
-        var childNodes = item.getChildNodes();
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            var childNode = childNodes.item(i);
-            if (childNode.getNodeType() != ELEMENT_NODE) {
-                log.debug("skipping non element child node...");
-            } else if ("name".equals(childNode.getNodeName())) {
-                if (childNode.getAttributes().getNamedItem("type") != null &&
-                        !"primary".equals(childNode.getAttributes().getNamedItem("type").getNodeValue())) {
-                    continue; // ignore non-primary language (english only for now)
-                }
-                game.setName(childNode.getAttributes().getNamedItem("value").getNodeValue());
-            } else if ("yearpublished".equals(childNode.getNodeName())) {
-                game.setYearPublished(childNode.getAttributes().getNamedItem("value").getNodeValue());
-            } else if ("thumbnail".equals(childNode.getNodeName())) {
-                setThumbnail(game, childNode);
-            } else {
-                log.debug("Extra node name when parsing child node from BGG XML: {}", childNode);
-            }
-        }
-        return game;
-    }
-
-    private static void setThumbnail(GameDto game, Node childNode) {
-        if (childNode.hasAttributes()) {
-            game.setThumbnail(childNode.getAttributes().getNamedItem("value").getNodeValue());
-        } else {
-            game.setThumbnail(childNode.getFirstChild().getNodeValue());
-        }
+    private <T> Mono<T> fetchAndParse(HttpRequest<?> request, Function<String, T> parse) {
+        Publisher<String> publisher = httpClient.retrieve(request, String.class);
+        return Mono.from(publisher)
+                .flatMap(response -> Mono.fromCallable(() -> parse.apply(response))
+                        .subscribeOn(Schedulers.boundedElastic()));
     }
 }

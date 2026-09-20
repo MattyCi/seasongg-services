@@ -26,4 +26,12 @@ public class GameController {
         val result = gameClient.getPopularGames();
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
+
+    // TODO: eventually this should be only allowed by authenticated users
+    @Get("/search")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<Mono<List<GameDto>>> searchGames(@QueryValue String query) {
+        val result = gameClient.searchGames(query);
+        return HttpResponse.status(HttpStatus.OK).body(result);
+    }
 }
