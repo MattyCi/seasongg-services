@@ -37,6 +37,7 @@ public class ExternalGameClient {
     }
 
     public Mono<GameDto> getGame(Long gameId) {
+        // TODO: get game from local database first, if not found then call BGG API
         return fetchAndParse(requestBuilder.gameById(gameId), xmlParser::parseSingleGame)
                 .onErrorResume(this::handleGetGameError);
     }

@@ -34,115 +34,25 @@ import static org.w3c.dom.Node.ELEMENT_NODE;
 @Slf4j
 public class BggGameXmlParser {
 
-    private static final String EL_ITEM = "item";
-    private static final String EL_ERROR = "error";
-    private static final String EL_NAME = "name";
-    private static final String EL_YEAR_PUBLISHED = "yearpublished";
-    private static final String EL_THUMBNAIL = "thumbnail";
     private static final String ATTR_ID = "id";
     private static final String ATTR_RANK = "rank";
-    private static final String ATTR_TYPE = "type";
     private static final String ATTR_VALUE = "value";
-    private static final String ATTR_MESSAGE = "message";
-    private static final String PRIMARY_NAME_TYPE = "primary";
 
     public GameDto parseSingleGame(String rawResponse) {
         Document document = parseXml(rawResponse);
         assertNoBggError(document);
         Element item = singleItemOrThrow(document);
         GameDto game = toGame(item);
-        game.setGameId(requireId(item));
+        Long id = parseId(item).orElseThrow(() -> new SggException("BGG response missing game ID."));
+        game.setGameId(id);
         return game;
-    }
-
-    public List<GameDto> parsePopularGames(String rawResponse) {
-        List<Element> items = itemElements(parseXml(rawResponse));
-        if (items.isEmpty()) {
-            log.error("Zero items retrieved from BGG response.");
-            return List.of();
-        }
-        return items.stream()
-                .map(this::parseRankedGame)
-                .flatMap(Optional::stream)
-                .toList();
-    }
-
-    public List<GameDto> parseSearchResults(String rawResponse) {
-        List<Element> items = itemElements(parseXml(rawResponse));
-        if (items.isEmpty()) {
-            log.debug("Zero items retrieved from BGG search response.");
-        }
-        return items.stream()
-                .map(this::parseGame)
-                .flatMap(Optional::stream)
-                .toList();
-    }
-
-    public Map<Long, String> parseThumbnails(String rawResponse) {
-        Map<Long, String> thumbnailsById = new HashMap<>();
-        for (Element item : itemElements(parseXml(rawResponse))) {
-            parseId(item).ifPresent(id ->
-                    findThumbnail(item).ifPresent(thumbnail -> thumbnailsById.put(id, thumbnail)));
-        }
-        return thumbnailsById;
-    }
-
-    private Optional<GameDto> parseGame(Element item) {
-        return parseId(item).map(id -> {
-            GameDto game = toGame(item);
-            game.setGameId(id);
-            return game;
-        });
-    }
-
-    private Optional<GameDto> parseRankedGame(Element item) {
-        Optional<Long> id = parseId(item);
-        Optional<Long> rank = parseLong(item.getAttribute(ATTR_RANK), ATTR_RANK);
-        if (id.isEmpty() || rank.isEmpty()) {
-            return Optional.empty();
-        }
-        GameDto game = toGame(item);
-        game.setGameId(id.get());
-        game.setRank(rank.get());
-        return Optional.of(game);
-    }
-
-    private GameDto toGame(Element item) {
-        GameDto game = new GameDto();
-        forEachElementChild(item, child -> applyField(game, child));
-        return game;
-    }
-
-    private void applyField(GameDto game, Element field) {
-        switch (field.getTagName()) {
-            case EL_NAME -> applyPrimaryName(game, field);
-            case EL_YEAR_PUBLISHED -> game.setYearPublished(BggXmlAttributes.read(field, ATTR_VALUE));
-            case EL_THUMBNAIL -> game.setThumbnail(BggXmlAttributes.readThumbnail(field));
-            default -> log.debug("Ignoring unrecognized BGG field: {}", field.getTagName());
-        }
-    }
-
-    private void applyPrimaryName(GameDto game, Element nameElement) {
-        String type = BggXmlAttributes.read(nameElement, ATTR_TYPE);
-        boolean isPrimaryName = type == null || PRIMARY_NAME_TYPE.equals(type);
-        if (isPrimaryName) {
-            game.setName(BggXmlAttributes.read(nameElement, ATTR_VALUE));
-        }
-    }
-
-    private Optional<String> findThumbnail(Element item) {
-        NodeList thumbnails = item.getElementsByTagName(EL_THUMBNAIL);
-        if (thumbnails.getLength() == 0) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(BggXmlAttributes.readThumbnail(thumbnails.item(0)));
     }
 
     private void assertNoBggError(Document document) {
-        NodeList errors = document.getElementsByTagName(EL_ERROR);
+        NodeList errors = document.getElementsByTagName("error");
         if (errors.getLength() > 0) {
-            log.error(BggXmlAttributes.read(errors.item(0), ATTR_MESSAGE));
-            throw new SggException("Error returned from BGG in get game call.");
+            log.error(BggXmlAttributes.read(errors.item(0), "message"));
+            throw new SggException("Unexpected error element returned from BGG.");
         }
     }
 
@@ -157,13 +67,83 @@ public class BggGameXmlParser {
         return items.get(0);
     }
 
-    private long requireId(Element item) {
-        return parseId(item).orElseThrow(() ->
-                new SggException(String.format("Unable to parse id from BGG item %s", item.getAttribute(ATTR_ID))));
+    private List<Element> itemElements(Document document) {
+        NodeList nodes = document.getElementsByTagName("item");
+        List<Element> elements = new ArrayList<>(nodes.getLength());
+        for (int i = 0; i < nodes.getLength(); i++) {
+            elements.add((Element) nodes.item(i));
+        }
+        return elements;
+    }
+
+    private GameDto toGame(Element item) {
+        GameDto game = new GameDto();
+        forEachElementChild(item, child -> applyField(game, child));
+        return game;
+    }
+
+    private void forEachElementChild(Element parent, Consumer<Element> action) {
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            // skip things like whitespace text nodes, comments, etc. and only process element nodes
+            if (child.getNodeType() == ELEMENT_NODE) {
+                action.accept((Element) child);
+            }
+        }
+    }
+
+    private void applyField(GameDto game, Element field) {
+        switch (field.getTagName()) {
+            case "name" -> applyPrimaryName(game, field);
+            case "yearpublished" -> game.setYearPublished(BggXmlAttributes.read(field, ATTR_VALUE));
+            case "thumbnail" -> game.setThumbnail(BggXmlAttributes.readThumbnail(field));
+            default -> log.debug("Ignoring unrecognized BGG field: {}", field.getTagName());
+        }
+    }
+
+    private void applyPrimaryName(GameDto game, Element nameElement) {
+        if (game.getName() != null) {
+            // game name already has been set, skipping other name elements (e.g. alternate names in other languages)
+            return;
+        }
+        String nameType = nameElement.getAttributes().getNamedItem("type").getNodeValue();
+        if ("primary".equals(nameType)) {
+            // bgg has primary (English) and alternate (non-English) names, we want the primary one
+            game.setName(BggXmlAttributes.read(nameElement, ATTR_VALUE));
+        }
+    }
+
+    public List<GameDto> parsePopularGames(String rawResponse) {
+        List<Element> items = itemElements(parseXml(rawResponse));
+        if (items.isEmpty()) {
+            log.error("Zero items retrieved from BGG response.");
+            return List.of();
+        }
+        return items.stream()
+                .map(this::parsePopularGame)
+                .flatMap(Optional::stream)
+                .toList();
+    }
+
+    private Optional<GameDto> parsePopularGame(Element item) {
+        Optional<Long> id = parseId(item);
+        Optional<Long> rank = parseRank(item);
+        if (id.isEmpty() || rank.isEmpty()) {
+            return Optional.empty();
+        }
+        GameDto game = toGame(item);
+        game.setGameId(id.get());
+        game.setRank(rank.get());
+        return Optional.of(game);
     }
 
     private Optional<Long> parseId(Element item) {
         return parseLong(item.getAttribute(ATTR_ID), ATTR_ID);
+    }
+
+    private Optional<Long> parseRank(Element item) {
+        return parseLong(item.getAttribute(ATTR_RANK), ATTR_RANK);
     }
 
     private Optional<Long> parseLong(String rawValue, String fieldName) {
@@ -175,23 +155,41 @@ public class BggGameXmlParser {
         }
     }
 
-    private List<Element> itemElements(Document document) {
-        NodeList nodes = document.getElementsByTagName(EL_ITEM);
-        List<Element> elements = new ArrayList<>(nodes.getLength());
-        for (int i = 0; i < nodes.getLength(); i++) {
-            elements.add((Element) nodes.item(i));
+    public List<GameDto> parseSearchResults(String rawResponse) {
+        List<Element> items = itemElements(parseXml(rawResponse));
+        if (items.isEmpty()) {
+            log.debug("Zero items retrieved from BGG search response.");
+            return List.of();
         }
-        return elements;
+        return items.stream()
+                .map(this::parseGame)
+                .flatMap(Optional::stream)
+                .toList();
     }
 
-    private void forEachElementChild(Element parent, Consumer<Element> action) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child.getNodeType() == ELEMENT_NODE) {
-                action.accept((Element) child);
-            }
+    private Optional<GameDto> parseGame(Element item) {
+        return parseId(item).map(id -> {
+            GameDto game = toGame(item);
+            game.setGameId(id);
+            return game;
+        });
+    }
+
+    public Map<Long, String> parseThumbnails(String rawResponse) {
+        Map<Long, String> thumbnailsById = new HashMap<>();
+        for (Element item : itemElements(parseXml(rawResponse))) {
+            parseId(item).ifPresent(id ->
+                    findThumbnail(item).ifPresent(thumbnail -> thumbnailsById.put(id, thumbnail)));
         }
+        return thumbnailsById;
+    }
+
+    private Optional<String> findThumbnail(Element item) {
+        NodeList thumbnails = item.getElementsByTagName("thumbnail");
+        if (thumbnails.getLength() == 0) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(BggXmlAttributes.readThumbnail(thumbnails.item(0)));
     }
 
     private Document parseXml(String response) {
@@ -207,7 +205,7 @@ public class BggGameXmlParser {
             DocumentBuilder builder = factory.newDocumentBuilder();
             return builder.parse(new InputSource(new StringReader(response)));
         } catch (SAXException | IOException | ParserConfigurationException e) {
-            String message = "Error parsing XML from BGG.";
+            String message = "Error parsing response from BGG.";
             log.error(message, e);
             throw new SggException(message);
         }
