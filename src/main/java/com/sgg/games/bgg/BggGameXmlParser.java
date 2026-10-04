@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
- * Turns raw BGG XML API responses into GameDto objects.
+ * Serializes BGG XML API responses into GameDto objects.
  */
 @Singleton
 @Slf4j
@@ -51,9 +51,18 @@ public class BggGameXmlParser {
     private void assertNoBggError(Document document) {
         NodeList errors = document.getElementsByTagName("error");
         if (errors.getLength() > 0) {
-            log.error(BggXmlAttributes.read(errors.item(0), "message"));
+            String errMsg = readAttrFromNode(errors.item(0), "message");
+            log.error("Error message returned from BGG: {}", errMsg != null ? errMsg : "empty value");
             throw new SggException("Unexpected error element returned from BGG.");
         }
+    }
+
+    private static String readAttrFromNode(Node node, String attributeName) {
+        if (node == null || node.getAttributes() == null) {
+            return null;
+        }
+        Node attribute = node.getAttributes().getNamedItem(attributeName);
+        return attribute == null ? null : attribute.getNodeValue();
     }
 
     private Element singleItemOrThrow(Document document) {
@@ -96,10 +105,19 @@ public class BggGameXmlParser {
     private void applyField(GameDto game, Element field) {
         switch (field.getTagName()) {
             case "name" -> applyPrimaryName(game, field);
-            case "yearpublished" -> game.setYearPublished(BggXmlAttributes.read(field, ATTR_VALUE));
-            case "thumbnail" -> game.setThumbnail(BggXmlAttributes.readThumbnail(field));
+            case "yearpublished" -> game.setYearPublished(readAttrFromNode(field, ATTR_VALUE));
+            case "thumbnail" -> game.setThumbnail(readThumbnailAttr(field));
             default -> log.debug("Ignoring unrecognized BGG field: {}", field.getTagName());
         }
+    }
+
+    private static String readThumbnailAttr(Node thumbnailNode) {
+        String attributeValue = readAttrFromNode(thumbnailNode, "value");
+        if (attributeValue != null) {
+            return attributeValue;
+        }
+        Node textContent = thumbnailNode.getFirstChild();
+        return textContent == null ? null : textContent.getNodeValue();
     }
 
     private void applyPrimaryName(GameDto game, Element nameElement) {
@@ -110,7 +128,7 @@ public class BggGameXmlParser {
         String nameType = nameElement.getAttributes().getNamedItem("type").getNodeValue();
         if ("primary".equals(nameType)) {
             // bgg has primary (English) and alternate (non-English) names, we want the primary one
-            game.setName(BggXmlAttributes.read(nameElement, ATTR_VALUE));
+            game.setName(readAttrFromNode(nameElement, ATTR_VALUE));
         }
     }
 
@@ -189,7 +207,7 @@ public class BggGameXmlParser {
         if (thumbnails.getLength() == 0) {
             return Optional.empty();
         }
-        return Optional.ofNullable(BggXmlAttributes.readThumbnail(thumbnails.item(0)));
+        return Optional.ofNullable(readThumbnailAttr(thumbnails.item(0)));
     }
 
     private Document parseXml(String response) {
