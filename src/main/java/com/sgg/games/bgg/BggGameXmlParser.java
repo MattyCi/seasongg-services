@@ -112,7 +112,7 @@ public class BggGameXmlParser {
     }
 
     private static String readThumbnailAttr(Node thumbnailNode) {
-        String attributeValue = readAttrFromNode(thumbnailNode, "value");
+        String attributeValue = readAttrFromNode(thumbnailNode, ATTR_VALUE);
         if (attributeValue != null) {
             return attributeValue;
         }
