@@ -120,16 +120,20 @@ public class BggGameXmlParser {
         return textContent == null ? null : textContent.getNodeValue();
     }
 
+    /**
+     * Some responses from BGG may contain multiple name elements, including "alternate" names in other languages.
+     * This method only applies the first "primary" name found to the GameDto.
+     */
     private void applyPrimaryName(GameDto game, Element nameElement) {
         if (game.getName() != null) {
             // game name already has been set, skipping other name elements (e.g. alternate names in other languages)
             return;
         }
-        String nameType = nameElement.getAttributes().getNamedItem("type").getNodeValue();
-        if ("primary".equals(nameType)) {
-            // bgg has primary (English) and alternate (non-English) names, we want the primary one
-            game.setName(readAttrFromNode(nameElement, ATTR_VALUE));
+        if ("alternate".equals(nameElement.getAttribute("type"))) {
+            // alternate name, skipping
+            return;
         }
+        game.setName(readAttrFromNode(nameElement, ATTR_VALUE));
     }
 
     public List<GameDto> parsePopularGames(String rawResponse) {
