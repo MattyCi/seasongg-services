@@ -22,9 +22,6 @@ import java.util.stream.Collectors;
 @Singleton
 @Slf4j
 public class ExternalGameClient {
-
-    private static final int MAX_THUMBNAIL_LOOKUP_IDS = 20;
-
     private final HttpClient httpClient;
     private final BggRequestBuilder requestBuilder;
     private final BggGameXmlParser xmlParser;
@@ -58,29 +55,7 @@ public class ExternalGameClient {
     public Mono<List<GameDto>> searchGames(String query) {
         // TODO: validate query string before passing onto BGG
         return fetchAndParse(requestBuilder.searchGames(query), xmlParser::parseSearchResults)
-                .flatMap(this::enrichWithThumbnails)
                 .onErrorResume(e -> logAndReturnEmptyList("search results", e));
-    }
-
-    private Mono<List<GameDto>> enrichWithThumbnails(List<GameDto> games) {
-        if (games.isEmpty()) {
-            return Mono.just(games);
-        }
-        List<Long> idsToLookup = games.stream()
-                .map(GameDto::getGameId)
-                .limit(MAX_THUMBNAIL_LOOKUP_IDS)
-                .collect(Collectors.toList());
-        return fetchAndParse(requestBuilder.gamesByIds(idsToLookup), xmlParser::parseThumbnails)
-                .map(thumbnailsById -> applyThumbnails(games, thumbnailsById))
-                .onErrorResume(e -> {
-                    log.error("Failed to enrich search results with thumbnails from BGG", e);
-                    return Mono.just(games);
-                });
-    }
-
-    private List<GameDto> applyThumbnails(List<GameDto> games, Map<Long, String> thumbnailsById) {
-        games.forEach(game -> game.setThumbnail(thumbnailsById.get(game.getGameId())));
-        return games;
     }
 
     private <T> Mono<List<T>> logAndReturnEmptyList(String what, Throwable e) {

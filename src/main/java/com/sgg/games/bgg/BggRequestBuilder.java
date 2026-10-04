@@ -28,11 +28,6 @@ public class BggRequestBuilder {
         return get("thing", Map.of("id", String.valueOf(gameId)));
     }
 
-    public HttpRequest<?> gamesByIds(List<Long> gameIds) {
-        String ids = gameIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-        return get("thing", Map.of("id", ids));
-    }
-
     public HttpRequest<?> popularGames() {
         return get("hot", Map.of("type", BOARD_GAME_TYPE));
     }

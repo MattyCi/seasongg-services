@@ -19,9 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -195,23 +193,6 @@ public class BggGameXmlParser {
             game.setGameId(id);
             return game;
         });
-    }
-
-    public Map<Long, String> parseThumbnails(String rawResponse) {
-        Map<Long, String> thumbnailsById = new HashMap<>();
-        for (Element item : itemElements(parseXml(rawResponse))) {
-            parseId(item).ifPresent(id ->
-                    findThumbnail(item).ifPresent(thumbnail -> thumbnailsById.put(id, thumbnail)));
-        }
-        return thumbnailsById;
-    }
-
-    private Optional<String> findThumbnail(Element item) {
-        NodeList thumbnails = item.getElementsByTagName("thumbnail");
-        if (thumbnails.getLength() == 0) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(readThumbnailAttr(thumbnails.item(0)));
     }
 
     private Document parseXml(String response) {
