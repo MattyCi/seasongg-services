@@ -21,9 +21,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-
-import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
  * Serializes BGG XML API responses into GameDto objects.
@@ -85,28 +82,32 @@ public class BggGameXmlParser {
 
     private GameDto toGame(Element item) {
         GameDto game = new GameDto();
-        forEachElementChild(item, child -> applyField(game, child));
-        return game;
-    }
+        String name = null;
+        String alternateName = null;
 
-    private void forEachElementChild(Element parent, Consumer<Element> action) {
-        NodeList children = parent.getChildNodes();
+        NodeList children = item.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            // skip things like whitespace text nodes, comments, etc. and only process element nodes
-            if (child.getNodeType() == ELEMENT_NODE) {
-                action.accept((Element) child);
+            if (!(children.item(i) instanceof Element field)) {
+                continue; // whitespace, comments, etc.
+            }
+             switch (field.getTagName()) {
+                case "name" -> {
+                    String value = readAttrFromNode(field, ATTR_VALUE);
+                    // BGG games can have a "primary" name and an "alternate" name
+                    // use the primary name if it exists, otherwise use the alternate name
+                    if ("alternate".equals(field.getAttribute("type"))) {
+                        alternateName = alternateName != null ? alternateName : value;
+                    } else {
+                        name = name != null ? name : value;
+                    }
+                }
+                case "yearpublished" -> game.setYearPublished(readAttrFromNode(field, ATTR_VALUE));
+                case "thumbnail" -> game.setThumbnail(readThumbnailAttr(field));
+                default -> log.debug("Ignoring unrecognized BGG field: {}", field.getTagName());
             }
         }
-    }
-
-    private void applyField(GameDto game, Element field) {
-        switch (field.getTagName()) {
-            case "name" -> applyPrimaryName(game, field);
-            case "yearpublished" -> game.setYearPublished(readAttrFromNode(field, ATTR_VALUE));
-            case "thumbnail" -> game.setThumbnail(readThumbnailAttr(field));
-            default -> log.debug("Ignoring unrecognized BGG field: {}", field.getTagName());
-        }
+        game.setName(name != null ? name : alternateName);
+        return game;
     }
 
     private static String readThumbnailAttr(Node thumbnailNode) {
@@ -116,22 +117,6 @@ public class BggGameXmlParser {
         }
         Node textContent = thumbnailNode.getFirstChild();
         return textContent == null ? null : textContent.getNodeValue();
-    }
-
-    /**
-     * Some responses from BGG may contain multiple name elements, including "alternate" names in other languages.
-     * This method only applies the first "primary" name found to the GameDto.
-     */
-    private void applyPrimaryName(GameDto game, Element nameElement) {
-        if (game.getName() != null) {
-            // game name already has been set, skipping other name elements (e.g. alternate names in other languages)
-            return;
-        }
-        if ("alternate".equals(nameElement.getAttribute("type"))) {
-            // alternate name, skipping
-            return;
-        }
-        game.setName(readAttrFromNode(nameElement, ATTR_VALUE));
     }
 
     public List<GameDto> parsePopularGames(String rawResponse) {
