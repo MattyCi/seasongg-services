@@ -8,10 +8,12 @@ import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Singleton
 @Slf4j
@@ -21,6 +23,14 @@ public class GameService {
     private GameRepository gameRepository;
     private GameMapper gameMapper;
     private ExternalGameClient gameClient;
+
+    public Mono<List<GameDto>> getPopularGames() {
+        return gameClient.getPopularGames();
+    }
+
+    public Mono<List<GameDto>> searchGames(String query) {
+        return gameClient.searchGames(query);
+    }
 
     public GameDto maybeCreateGame(GameDto game) {
         val storedGame = gameRepository.findById(game.getGameId());

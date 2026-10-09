@@ -1,6 +1,6 @@
 package com.sgg.web.controllers;
 
-import com.sgg.games.ExternalGameClient;
+import com.sgg.games.GameService;
 import com.sgg.games.model.GameDto;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
@@ -17,13 +17,13 @@ import java.util.List;
 @Controller("${apiVersion}/games")
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class GameController {
-    ExternalGameClient gameClient;
+    GameService gameService;
 
     // TODO: eventually this should be only allowed by authenticated users
     @Get("/popular")
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<Mono<List<GameDto>>> getPopularGames() {
-        val result = gameClient.getPopularGames();
+        val result = gameService.getPopularGames();
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
 
@@ -31,7 +31,7 @@ public class GameController {
     @Get("/search")
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<Mono<List<GameDto>>> searchGames(@QueryValue String query) {
-        val result = gameClient.searchGames(query);
+        val result = gameService.searchGames(query);
         return HttpResponse.status(HttpStatus.OK).body(result);
     }
 }
