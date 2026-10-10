@@ -1,7 +1,9 @@
 package com.sgg.games
 
-
+import com.sgg.common.exception.NotFoundException
 import com.sgg.common.exception.SggException
+import com.sgg.games.bgg.BggGameXmlParser
+import com.sgg.games.bgg.BggRequestBuilder
 import com.sgg.games.model.GameDto
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -13,180 +15,180 @@ import spock.lang.Specification
 
 class ExternalGameClientSpec extends Specification {
 
-    HttpClient httpClient = Mock(HttpClient)
-    ExternalGameClient externalGameClient = new ExternalGameClient(httpClient)
+    static final String RAW_RESPONSE = "<items/>"
+    static final String GET_GAME_ERROR = "Unexpected error occurred finding game from BGG."
 
-    def "getPopularGames returns list of games when response is valid"() {
+    HttpClient httpClient = Mock()
+    BggRequestBuilder requestBuilder = Mock()
+    BggGameXmlParser xmlParser = Mock()
+
+    ExternalGameClient client = new ExternalGameClient(httpClient, requestBuilder, xmlParser)
+
+    HttpRequest<?> request = HttpRequest.GET("https://example.com/bgg")
+
+    def "get game succeeds"() {
         given:
-        String validXmlResponse = """
-        <items>
-            <item id="1" rank="1">
-                <name value="Game 1"/>
-                <yearpublished value="2020"/>
-                <thumbnail value="https://example.com/game1.png"/>
-            </item>
-            <item id="2" rank="2">
-                <name value="Game 2"/>
-                <yearpublished value="2022"/>
-                <thumbnail value="https://example.com/game2.png"/>
-            </item>
-        </items>
-        """
-        httpClient.retrieve(_ as HttpRequest, String.class) >> Mono.just(validXmlResponse)
+        def game = new GameDto(gameId: 12345L, name: "Catan")
+        requestBuilder.gameById(12345L) >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
 
         when:
-        def result = externalGameClient.getPopularGames().block()
+        StepVerifier.create(client.getGame(12345L))
+                .expectNext(game)
+                .verifyComplete()
 
         then:
-        result.size() == 2
-        result[0].gameId == 1
-        result[0].rank == 1
-        result[0].name == "Game 1"
-        result[0].yearPublished == "2020"
-        result[0].thumbnail == "https://example.com/game1.png"
-
-        and:
-        result[1].gameId == 2
-        result[1].rank == 2
-        result[1].name == "Game 2"
-        result[1].yearPublished == "2022"
-        result[1].thumbnail == "https://example.com/game2.png"
+        1 * xmlParser.parseSingleGame(RAW_RESPONSE) >> game
     }
 
-    def "getPopularGames returns empty list when response is empty"() {
+    def "get game handles game not found"() {
         given:
-        httpClient.retrieve(_ as HttpRequest, String.class) >> Mono.just("")
+        requestBuilder.gameById(99999L) >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
 
         when:
-        def result = externalGameClient.getPopularGames().block()
+        StepVerifier.create(client.getGame(99999L))
+                .expectNextCount(0)
+                .verifyComplete()
 
         then:
-        result.isEmpty()
+        1 * xmlParser.parseSingleGame(RAW_RESPONSE) >> { throw new NotFoundException("Game not found.") }
     }
 
-    def "getPopularGames handles invalid XML gracefully"() {
+    def "get game handles errors while parsing xml response from bgg"() {
         given:
-        String invalidXmlResponse = "<invalid>"
-        httpClient.retrieve(_ as HttpRequest, String.class) >> Mono.just(invalidXmlResponse)
+        requestBuilder.gameById(12345L) >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
 
         when:
-        def result = externalGameClient.getPopularGames().block()
-
-        then:
-        result.isEmpty()
-    }
-
-    def "getPopularGames handles HTTP errors gracefully"() {
-        given:
-        httpClient.retrieve(_ as HttpRequest, String.class) >> Mono.error {
-            throw new HttpClientResponseException("Error", HttpResponse.serverError())
-        }
-
-        when:
-        def result = externalGameClient.getPopularGames().block()
-
-        then:
-        result.isEmpty()
-    }
-
-    def "getGame returns game details when response is valid"() {
-        given:
-        def expectedGame = new GameDto(
-                gameId: 12345,
-                name: "Primary Name",
-                yearPublished: 2023,
-                thumbnail: "https://example.com/game.png"
-        )
-        def validXmlResponse = """
-        <items>
-            <item type="boardgame" id="12345">
-                <name type="primary" sortindex="1" value="Primary Name" />
-                <name type="alternate" sortindex="1" value="Secondary Name 1" />
-                <name type="alternate" sortindex="1" value="Secondary Name 2" />
-                <yearpublished value="2023"/>
-                <thumbnail>https://example.com/game.png</thumbnail>
-            </item>
-        </items>
-        """
-        httpClient.retrieve(_ as HttpRequest) >> Mono.just(validXmlResponse)
-
-        when:
-        def result = externalGameClient.getGame(12345L)
-
-        then:
-        StepVerifier.create(result)
-                .expectNext(expectedGame)
-                .expectComplete()
+        StepVerifier.create(client.getGame(12345L))
+                .expectErrorMatches { it instanceof SggException && it.message == GET_GAME_ERROR }
                 .verify()
-    }
-
-    def "getGame throws NotFoundException when game is not found"() {
-        given:
-        def emptyXmlResponse = "<items></items>"
-        httpClient.retrieve(_ as HttpRequest) >> Mono.just(emptyXmlResponse)
-
-        when:
-        def result = externalGameClient.getGame(99999L)
 
         then:
-        StepVerifier.create(result)
-            .expectNextCount(0)
-            .verifyComplete()
+        1 * xmlParser.parseSingleGame(RAW_RESPONSE) >> { throw new SggException("Error parsing response from BGG.") }
     }
 
-    def "getGame handles error XML gracefully"() {
+    def "get game handles unexpected http errors from bgg"() {
         given:
-        String invalidXmlResponse = """
-            <?xml version="1.0" encoding="utf-8"?>
-            <items termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
-                <item>
-                    <error message='Invalid Item'/>
-                </item>
-            </items>
-        """
-        httpClient.retrieve(_ as HttpRequest) >> Mono.just(invalidXmlResponse)
+        requestBuilder.gameById(12345L) >> request
+        httpClient.retrieve(request, String) >>
+                Mono.error(new HttpClientResponseException("Error", HttpResponse.serverError()))
 
         when:
-        def result = externalGameClient.getGame(12345L)
+        StepVerifier.create(client.getGame(12345L))
+                .expectErrorMatches { it instanceof SggException && it.message == GET_GAME_ERROR }
+                .verify()
 
         then:
-        StepVerifier.create(result)
-                .expectErrorSatisfies { e ->
-                    assert e instanceof SggException
-                    assert e.getMessage() == "Unexpected error occurred finding game from BGG."
-                }.verify()
+        0 * xmlParser._
     }
 
-    def "getGame handles invalid XML gracefully"() {
+    def "get popular games succeeds"() {
         given:
-        String invalidXmlResponse = "<invalid>"
-        httpClient.retrieve(_ as HttpRequest) >> Mono.just(invalidXmlResponse)
+        def games = [new GameDto(gameId: 1L, rank: 1L, name: "Game 1"),
+                     new GameDto(gameId: 2L, rank: 2L, name: "Game 2")]
+        requestBuilder.popularGames() >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
 
         when:
-        def result = externalGameClient.getGame(12345L)
+        StepVerifier.create(client.getPopularGames())
+                .expectNext(games)
+                .verifyComplete()
 
         then:
-        StepVerifier.create(result)
-            .expectErrorSatisfies { e ->
-                assert e instanceof SggException
-                assert e.getMessage() == "Unexpected error occurred finding game from BGG."
-            }.verify()
+        1 * xmlParser.parsePopularGames(RAW_RESPONSE) >> games
     }
 
-    def "getGame handles HTTP errors gracefully"() {
+    def "get popular games returns an empty list when parsing fails"() {
         given:
-        httpClient.retrieve(_ as HttpRequest) >> Mono.error {
-            throw new HttpClientResponseException("Error", HttpResponse.serverError())
-        }
+        requestBuilder.popularGames() >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
 
         when:
-        def result = externalGameClient.getGame(12345L)
+        StepVerifier.create(client.getPopularGames())
+                .expectNext([])
+                .verifyComplete()
 
         then:
-        StepVerifier.create(result)
-            .expectErrorSatisfies { e ->
-                assert e instanceof SggException
-                assert e.getMessage() == "Unexpected error occurred finding game from BGG."
-            }.verify()
+        1 * xmlParser.parsePopularGames(RAW_RESPONSE) >> { throw new SggException("Response from BGG was empty.") }
+    }
+
+    def "get popular games returns an empty list when the HTTP call fails"() {
+        given:
+        requestBuilder.popularGames() >> request
+        httpClient.retrieve(request, String) >>
+                Mono.error(new HttpClientResponseException("Error", HttpResponse.serverError()))
+
+        when:
+        StepVerifier.create(client.getPopularGames())
+                .expectNext([])
+                .verifyComplete()
+
+        then:
+        0 * xmlParser._
+    }
+
+    def "search games succeeds"() {
+        given:
+        def games = [new GameDto(gameId: 13L, name: "Catan")]
+        requestBuilder.searchGames("catan") >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
+
+        when:
+        StepVerifier.create(client.searchGames("catan"))
+                .expectNext(games)
+                .verifyComplete()
+
+        then:
+        1 * xmlParser.parseSearchResults(RAW_RESPONSE) >> games
+    }
+
+    def "search games trims and collapses repeated spaces before building the request"() {
+        when:
+        StepVerifier.create(client.searchGames(input))
+                .expectNext([])
+                .verifyComplete()
+
+        then:
+        1 * requestBuilder.searchGames(expected) >> request
+        1 * httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
+        1 * xmlParser.parseSearchResults(RAW_RESPONSE) >> []
+
+        where:
+        input                 || expected
+        "catan"               || "catan"
+        "  catan  "           || "catan"
+        "ticket   to    ride" || "ticket to ride"
+        "  star   wars  "     || "star wars"
+    }
+
+    def "search games returns an empty list when parsing fails"() {
+        given:
+        requestBuilder.searchGames("catan") >> request
+        httpClient.retrieve(request, String) >> Mono.just(RAW_RESPONSE)
+
+        when:
+        StepVerifier.create(client.searchGames("catan"))
+                .expectNext([])
+                .verifyComplete()
+
+        then:
+        1 * xmlParser.parseSearchResults(RAW_RESPONSE) >> { throw new SggException("some error") }
+    }
+
+    def "search games returns an empty list when the HTTP call fails"() {
+        given:
+        requestBuilder.searchGames("catan") >> request
+        httpClient.retrieve(request, String) >>
+                Mono.error(new HttpClientResponseException("Error", HttpResponse.serverError()))
+
+        when:
+        StepVerifier.create(client.searchGames("catan"))
+                .expectNext([])
+                .verifyComplete()
+
+        then:
+        0 * xmlParser._
     }
 }

@@ -15,13 +15,14 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Singleton
 @Slf4j
 public class ExternalGameClient {
+    private static final Pattern MULTI_SPACE = Pattern.compile(" {2,}");
+
     private final HttpClient httpClient;
     private final BggRequestBuilder requestBuilder;
     private final BggGameXmlParser xmlParser;
@@ -52,11 +53,12 @@ public class ExternalGameClient {
     }
 
     public Mono<List<GameDto>> searchGames(String query) {
-        // TODO: validate query string before passing onto BGG
-        return fetchAndParse(requestBuilder.searchGames(query), xmlParser::parseSearchResults)
+        String normalized = MULTI_SPACE.matcher(query.trim()).replaceAll(" ");
+        return fetchAndParse(requestBuilder.searchGames(normalized), xmlParser::parseSearchResults)
                 .onErrorResume(e -> logAndReturnEmptyList("search results", e));
     }
 
+    // TODO: should we throw an exception here instead of returning an empty list?
     private <T> Mono<List<T>> logAndReturnEmptyList(String what, Throwable e) {
         log.error("Failed to retrieve or parse {} from BGG", what, e);
         return Mono.just(List.of());
