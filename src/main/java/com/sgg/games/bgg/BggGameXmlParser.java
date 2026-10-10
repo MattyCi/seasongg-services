@@ -48,7 +48,7 @@ public class BggGameXmlParser {
         if (errors.getLength() > 0) {
             String errMsg = readAttrFromNode(errors.item(0), "message");
             log.error("Error message returned from BGG: {}", errMsg != null ? errMsg : "empty value");
-            throw new SggException("Unexpected error element returned from BGG.");
+            throw new SggException("Unexpected error returned from BGG.");
         }
     }
 
