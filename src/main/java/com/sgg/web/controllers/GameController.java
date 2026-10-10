@@ -40,7 +40,7 @@ public class GameController {
     public HttpResponse<Mono<List<GameDto>>> searchGames(
             @QueryValue
             @NotBlank
-            @Size(min = 2, max = 100)
+            @Size(min = 2, max = 25)
             @Pattern(regexp = SEARCH_QUERY_REGEX, message = SEARCH_QUERY_MESSAGE)
             String query) {
         val result = gameService.searchGames(query);
