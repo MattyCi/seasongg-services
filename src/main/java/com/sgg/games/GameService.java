@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -23,6 +24,15 @@ public class GameService {
     private GameRepository gameRepository;
     private GameMapper gameMapper;
     private ExternalGameClient gameClient;
+
+    public Mono<GameDto> getGame(Long gameId) {
+        return Mono.fromCallable(() -> gameRepository.findById(gameId))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(storedGame -> storedGame
+                        .map(gameMapper::toGameDto)
+                        .map(Mono::just)
+                        .orElseGet(() -> gameClient.getGame(gameId)));
+    }
 
     public Mono<List<GameDto>> getPopularGames() {
         return gameClient.getPopularGames();
