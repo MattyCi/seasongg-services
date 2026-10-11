@@ -11,6 +11,7 @@ import io.micronaut.validation.Validated;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.val;
@@ -25,6 +26,13 @@ public class GameController {
     private static final String SEARCH_QUERY_REGEX = "(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{M}\\p{N} '’\\-:.,!?&()/$]+";
     private static final String SEARCH_QUERY_MESSAGE = "Invalid characters provided in search query.";
     GameService gameService;
+
+    // TODO: eventually this should be only allowed by authenticated users
+    @Get("/{gameId}")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public Mono<GameDto> getGame(@PathVariable @Positive Long gameId) {
+        return gameService.getGame(gameId);
+    }
 
     // TODO: eventually this should be only allowed by authenticated users
     @Get("/popular")
